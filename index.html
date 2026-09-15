@@ -4,57 +4,106 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="color-scheme" content="dark" />
-  <title>데이터 너머, 미지의 세계 — 모바일 2단계</title>
+  <title>데이터 너머, 미지의 세계</title>
   <link rel="stylesheet" href="./css/common.css" />
 </head>
 <body class="mobile-page">
-  <main class="mobile-app">
-    <section id="startScreen" class="screen screen-start">
-      <div class="screen-card hero-card">
-        <p class="eyebrow">개막식 참여형 웹콘텐츠</p>
-        <h1>데이터 너머,<br />미지의 세계</h1>
-        <p class="description">
-          QR로 접속한 참여자가 전시의 흐름을 경험한 뒤, 자신이 궁금한 “미지”를 직접 남기는 모바일 웹페이지입니다.
-        </p>
-        <button id="enterButton" class="primary-button" type="button">입장하기</button>
-        <p class="helper-text">
-          2단계에서는 시작 화면과 최종 입력 화면(Scene 14), 제출 완료 상태, 다시 보기 동작까지 우선 연결합니다.
-        </p>
-        <div id="revisitNotice" class="info-banner" hidden>
-          이미 이 브라우저에서 참여를 완료했습니다. 다시 입장하여 흐름을 볼 수 있지만 재제출은 제한됩니다.
-        </div>
-        <div id="configWarningStart" class="warning" hidden>
-          Firebase 설정값이 아직 입력되지 않았습니다. <code>js/firebase-config.js</code>를 수정해주세요.
+  <main id="mobileApp" class="mobile-app">
+
+    <!-- 시작 화면 -->
+    <section id="startScreen" class="app-screen start-screen">
+      <div class="start-bg" aria-hidden="true"></div>
+      <div class="start-vignette" aria-hidden="true"></div>
+
+      <div class="start-content">
+        <p class="start-kicker">데이터 너머, 미지의 세계</p>
+        <button id="enterButton" class="enter-button" type="button">
+          <span>입장하기</span>
+        </button>
+        <p id="loadStatus" class="load-status" aria-live="polite">장면을 준비하고 있습니다…</p>
+
+        <div id="revisitNotice" class="revisit-notice" hidden>
+          이미 참여를 완료한 브라우저입니다.<br />
+          애니메이션은 다시 볼 수 있지만 질문은 다시 제출할 수 없습니다.
         </div>
       </div>
     </section>
 
-    <section id="transitionScreen" class="screen screen-transition" hidden>
-      <div class="transition-content">
-        <div class="glow-star" aria-hidden="true">✦</div>
-        <p class="eyebrow">모바일 흐름 연결 중</p>
-        <h2>입력 화면으로 이동합니다</h2>
-        <p class="description centered">
-          현재 2단계에서는 애니메이션 전체 대신 시작 화면에서 최종 입력 화면으로 연결되도록 구성했습니다.
-        </p>
+    <!-- Scene 1 : 우주 탐험 -->
+    <section id="scene1Screen" class="app-screen scene-screen" hidden aria-label="우주 탐험 애니메이션">
+      <div id="sceneViewport" class="scene-viewport">
+
+        <!-- 가상 카메라: 카메라 이동/확대는 이 레이어만 제어 -->
+        <div id="sceneCamera" class="scene-camera">
+          <div id="sceneWorld" class="scene-world">
+
+            <!-- 배경 자체의 느린 부유는 카메라 transform과 별개 -->
+            <div id="backgroundDrift" class="background-drift">
+              <img class="scene-bg" src="./assets/scene01-space/star-chart-bg.png" alt="" draggable="false" />
+            </div>
+
+            <!-- 전체 콜라주 공개 시 나타나는 장식 오브젝트 -->
+            <img id="mothTop" class="scene-object decorative moth moth-top"
+                 src="./assets/scene01-space/moth.png" alt="" draggable="false" />
+            <img id="ladyOnStar" class="scene-object decorative lady-on-star"
+                 src="./assets/scene01-space/lady-on-star.png" alt="" draggable="false" />
+            <img id="deityFigure" class="scene-object decorative deity-figure"
+                 src="./assets/scene01-space/deity-figure.png" alt="" draggable="false" />
+            <img id="moon" class="scene-object decorative moon"
+                 src="./assets/scene01-space/moon.png" alt="" draggable="false" />
+            <img id="saturn" class="scene-object decorative saturn"
+                 src="./assets/scene01-space/saturn.png" alt="" draggable="false" />
+            <img id="mothLower" class="scene-object decorative moth moth-lower"
+                 src="./assets/scene01-space/moth.png" alt="" draggable="false" />
+
+            <!-- 하단 탐험 장면 -->
+            <img id="globe" class="scene-object globe"
+                 src="./assets/scene01-space/globe.png" alt="" draggable="false" />
+            <img id="observer" class="scene-object observer"
+                 src="./assets/scene01-space/telescope-observer.png" alt="" draggable="false" />
+
+            <!-- 로켓: 위치 이동은 그룹, 점화 상태는 내부 이미지로 분리 -->
+            <div id="rocketGroup" class="rocket-group">
+              <img id="propulsionBeam" class="rocket-beam"
+                   src="./assets/scene01-space/propulsion-beam.png" alt="" draggable="false" />
+              <img id="rocketIdle" class="rocket-image rocket-idle"
+                   src="./assets/scene01-space/rocket-idle.png" alt="" draggable="false" />
+              <img id="rocketLaunch" class="rocket-image rocket-launch"
+                   src="./assets/scene01-space/rocket-launch.png" alt="" draggable="false" />
+            </div>
+
+            <!-- 발사 구름 -->
+            <img id="cloudLeft" class="scene-object launch-cloud cloud-left"
+                 src="./assets/scene01-space/cloud-left.png" alt="" draggable="false" />
+            <img id="cloudRight" class="scene-object launch-cloud cloud-right"
+                 src="./assets/scene01-space/cloud-right.png" alt="" draggable="false" />
+            <img id="cloudSmall" class="scene-object launch-cloud cloud-small"
+                 src="./assets/scene01-space/cloud-small.png" alt="" draggable="false" />
+          </div>
+        </div>
+
+        <div id="sceneLoading" class="scene-loading" hidden>
+          <div class="loading-star" aria-hidden="true">✦</div>
+          <p>우주를 준비하고 있습니다…</p>
+        </div>
+
+        <!-- 개발 중 장면 위치 확인용. 최종 버전에서는 제거 가능 -->
+        <div id="sceneDebugBadge" class="scene-debug-badge">SCENE 1 · 우주 탐험</div>
       </div>
     </section>
 
-    <section id="scene14Screen" class="screen screen-form" hidden>
-      <div class="screen-card form-card">
-        <div class="scene-badge">Scene 14</div>
-        <p class="eyebrow">질문 입력</p>
-        <h1>당신은 무엇이 궁금한가요?</h1>
-        <p class="description">
-          닉네임과 질문을 입력하면 질문이 별이 되어 대형 모니터 화면에 실시간으로 추가됩니다.
-        </p>
+    <!-- Scene 14 : 현재는 Scene 1 종료 뒤 임시 연결 -->
+    <section id="scene14Screen" class="app-screen form-screen" hidden>
+      <div class="form-shell">
+        <p class="form-kicker">당신은 무엇이 궁금한가요?</p>
+        <h1>내가 알고 싶은 것은</h1>
 
         <div id="scene14Warning" class="warning" hidden>
           Firebase 설정이 완료되지 않아 제출 기능을 사용할 수 없습니다.
         </div>
 
-        <form id="responseForm" novalidate>
-          <label for="nickname">닉네임 <span aria-hidden="true">*</span></label>
+        <form id="responseForm" class="response-form" novalidate>
+          <label for="nickname">닉네임</label>
           <input
             id="nickname"
             name="nickname"
@@ -66,7 +115,7 @@
             placeholder="1~10자"
           />
 
-          <label for="question">내가 알고 싶은 것은 <span aria-hidden="true">*</span></label>
+          <label for="question">질문</label>
           <input
             id="question"
             name="question"
@@ -78,29 +127,31 @@
             placeholder="1~20자"
           />
 
-          <button id="submitButton" class="primary-button" type="submit">제출</button>
-          <p id="formMessage" class="message" role="status" aria-live="polite"></p>
+          <button id="submitButton" class="submit-button" type="submit">제출</button>
+          <p id="formMessage" class="form-message" role="status" aria-live="polite"></p>
         </form>
 
         <section id="completedState" class="completed-panel" hidden>
-          <div class="star-burst" aria-hidden="true">
-            <div class="completion-star">✦</div>
-            <span class="orbit orbit-a"></span>
-            <span class="orbit orbit-b"></span>
-            <span class="orbit orbit-c"></span>
+          <div class="completion-star-wrap" aria-hidden="true">
+            <span class="completion-star">✦</span>
+            <span class="completion-ring completion-ring-a"></span>
+            <span class="completion-ring completion-ring-b"></span>
           </div>
+
           <h2 id="completedTitle">제출이 완료되었습니다.</h2>
           <p class="completed-copy">
-            이 브라우저에서는 추가 제출이 제한됩니다. 대형 모니터 화면에서 질문이 별로 표시되는 흐름과 연결됩니다.
+            질문이 하나의 별이 되어 대형 화면에 추가됩니다.
           </p>
+
           <dl id="submissionSummary" class="submission-summary"></dl>
-          <div class="button-row">
-            <button id="replayButton" class="secondary-button" type="button">애니메이션 다시 보기</button>
-            <button id="startButtonFromComplete" class="ghost-button" type="button">처음 화면으로</button>
-          </div>
+
+          <button id="replayButton" class="replay-button" type="button">
+            애니메이션 다시 보기
+          </button>
         </section>
       </div>
     </section>
+
   </main>
 
   <script type="module" src="./js/mobile.js"></script>
