@@ -1,46 +1,6 @@
 {
   "rules": {
     ".read": false,
-    ".write": false,
-
-    "responses": {
-      "$responseId": {
-        ".read": false,
-        ".write": "!data.exists() && newData.exists()",
-        ".validate": "newData.hasChildren(['nickname', 'question', 'createdAt', 'winner'])",
-
-        "nickname": {
-          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 10 && newData.val().matches(/.*\\S.*/)"
-        },
-        "question": {
-          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 20 && newData.val().matches(/.*\\S.*/) && !newData.val().matches(/.*[\\r\\n].*/)"
-        },
-        "createdAt": {
-          ".validate": "newData.isNumber() && newData.val() <= now && newData.val() >= now - 60000"
-        },
-        "winner": {
-          ".validate": "newData.val() === false"
-        }
-      }
-    },
-
-    "publicResponses": {
-      ".read": true,
-
-      "$responseId": {
-        ".write": "!data.exists() && newData.exists()",
-        ".validate": "newData.hasChildren(['question', 'createdAt', 'winner'])",
-
-        "question": {
-          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 20 && newData.val().matches(/.*\\S.*/) && !newData.val().matches(/.*[\\r\\n].*/)"
-        },
-        "createdAt": {
-          ".validate": "newData.isNumber() && newData.val() <= now && newData.val() >= now - 60000"
-        },
-        "winner": {
-          ".validate": "newData.val() === false"
-        }
-      }
-    }
+    ".write": false
   }
 }

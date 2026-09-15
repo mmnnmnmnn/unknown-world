@@ -93,15 +93,12 @@ function initialize() {
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
-  // .info/connected는 Realtime Database 연결 상태를 알려주는 특수 경로입니다.
   onValue(ref(db, ".info/connected"), (snapshot) => {
     setConnectionState(snapshot.val() === true ? "online" : "offline");
   });
 
   const publicResponsesRef = ref(db, "publicResponses");
 
-  // 기존 데이터는 onChildAdded가 각 항목에 대해 한 번씩 호출되며,
-  // 이후 새 질문이 들어오면 같은 리스너로 실시간 추가됩니다.
   onChildAdded(publicResponsesRef, (snapshot) => {
     addOrUpdateQuestion(snapshot.key, snapshot.val() ?? {});
   });
