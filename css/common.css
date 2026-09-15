@@ -165,7 +165,7 @@ button {
 .scene-camera {
   position: absolute;
   inset: 0;
-  transform-origin: 50% 72%;
+  transform-origin: 50% 84%;
   will-change: transform;
 }
 
@@ -203,73 +203,79 @@ button {
   opacity: 0;
 }
 
-/* 참고 이미지의 최종 콜라주 배치 기준 */
+/* 상단/중단 콜라주 배치 */
 .lady-on-star {
-  top: 3.5%;
+  top: 3.8%;
   left: 10%;
-  width: 42%;
+  width: 39%;
 }
 
 .deity-figure {
-  top: 4.5%;
-  right: 4.5%;
-  width: 34%;
+  top: 4.8%;
+  right: 4.6%;
+  width: 33%;
 }
 
 .moth-top {
   top: 15%;
-  left: 0.5%;
-  width: 14%;
+  left: 0.8%;
+  width: 13%;
   transform: rotate(-18deg);
 }
 
-.moon {
-  top: 28%;
-  right: 17%;
-  width: 19%;
+.planet-jupiter {
+  top: 32%;
+  left: 46%;
+  width: 17%;
+}
+
+.planet-green {
+  top: 36%;
+  right: 8%;
+  width: 24%;
 }
 
 .saturn {
-  top: 38%;
-  left: 5%;
-  width: 42%;
+  top: 47%;
+  left: 4.5%;
+  width: 41%;
 }
 
 .moth-lower {
-  top: 45%;
-  right: 9%;
+  top: 58%;
+  right: 7%;
   width: 11%;
-  transform: rotate(22deg);
+  transform: rotate(18deg);
 }
 
 .globe {
   z-index: 2;
-  left: 14%;
-  bottom: -0.5%;
-  width: 72%;
+  left: -18%;
+  bottom: -19%;
+  width: 138%;
   opacity: 0;
 }
 
 .observer {
   z-index: 6;
   left: 19%;
-  bottom: 8.5%;
-  width: 24%;
+  bottom: 10%;
+  width: 26%;
   opacity: 0;
+  transform-origin: 50% 100%;
 }
 
 .rocket-group {
   z-index: 8;
-  right: 13%;
-  bottom: 8.5%;
-  width: 23%;
+  right: 8%;
+  bottom: 10%;
+  width: 24%;
   aspect-ratio: 1113 / 1413;
   opacity: 0;
-  transform-origin: 50% 65%;
+  transform-origin: 50% 68%;
 }
 
-.rocket-image,
-.rocket-beam {
+.rocket-image {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -289,37 +295,27 @@ button {
   opacity: 0;
 }
 
-.rocket-beam {
-  z-index: 1;
-  width: 88%;
-  height: auto;
-  left: 6%;
-  top: 66%;
-  opacity: 0;
-  transform-origin: 50% 0;
-}
-
 .launch-cloud {
   z-index: 7;
   opacity: 0;
 }
 
 .cloud-left {
-  left: -13%;
-  bottom: -3%;
-  width: 57%;
+  left: 26%;
+  bottom: 3%;
+  width: 50%;
 }
 
 .cloud-right {
-  right: -11%;
-  bottom: -2%;
-  width: 54%;
+  right: -2%;
+  bottom: 4%;
+  width: 46%;
 }
 
 .cloud-small {
-  left: 39%;
-  bottom: 8%;
-  width: 34%;
+  left: 44%;
+  bottom: 13%;
+  width: 24%;
 }
 
 .scene-loading {
@@ -553,7 +549,7 @@ button {
   to { transform: rotate(0deg); }
 }
 
-/* Desktop preview: 휴대폰 비율 프레임을 중앙에 보여준다. */
+/* Desktop preview */
 @media (min-width: 760px) {
   .scene-screen,
   .start-screen {

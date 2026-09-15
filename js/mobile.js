@@ -18,21 +18,21 @@ import {
 const STORAGE_KEY = "unknown-world-submission-complete";
 const LAST_RESPONSE_KEY = "unknown-world-last-response";
 
-const SCENE1_DURATION = 12000;
+const SCENE1_DURATION = 24000;
 const SCENE1_ASSETS = [
   "./assets/scene01-space/star-chart-bg.png",
   "./assets/scene01-space/globe.png",
   "./assets/scene01-space/telescope-observer.png",
   "./assets/scene01-space/rocket-idle.png",
   "./assets/scene01-space/rocket-launch.png",
-  "./assets/scene01-space/propulsion-beam.png",
   "./assets/scene01-space/cloud-left.png",
   "./assets/scene01-space/cloud-right.png",
   "./assets/scene01-space/cloud-small.png",
   "./assets/scene01-space/lady-on-star.png",
   "./assets/scene01-space/deity-figure.png",
   "./assets/scene01-space/moth.png",
-  "./assets/scene01-space/moon.png",
+  "./assets/scene01-space/planet-jupiter.png",
+  "./assets/scene01-space/planet-green.png",
   "./assets/scene01-space/saturn.png"
 ];
 
@@ -52,18 +52,22 @@ const observer = document.querySelector("#observer");
 const rocketGroup = document.querySelector("#rocketGroup");
 const rocketIdle = document.querySelector("#rocketIdle");
 const rocketLaunch = document.querySelector("#rocketLaunch");
-const propulsionBeam = document.querySelector("#propulsionBeam");
 const cloudLeft = document.querySelector("#cloudLeft");
 const cloudRight = document.querySelector("#cloudRight");
 const cloudSmall = document.querySelector("#cloudSmall");
+
 const decorativeElements = [
   document.querySelector("#mothTop"),
   document.querySelector("#ladyOnStar"),
   document.querySelector("#deityFigure"),
-  document.querySelector("#moon"),
+  document.querySelector("#jupiter"),
+  document.querySelector("#planetGreen"),
   document.querySelector("#saturn"),
   document.querySelector("#mothLower")
 ];
+
+const ladyOnStar = document.querySelector("#ladyOnStar");
+const deityFigure = document.querySelector("#deityFigure");
 
 const form = document.querySelector("#responseForm");
 const nicknameInput = document.querySelector("#nickname");
@@ -80,8 +84,8 @@ let db = null;
 let scene1Ready = false;
 let scene1LoadingPromise = null;
 let scene1Animations = [];
-let sceneClock = null;
-let sceneRunId = 0;
+let scene1Clock = null;
+let activeSceneToken = 0;
 
 /* -------------------------------------------------------
    Firebase
@@ -132,6 +136,7 @@ function showOnly(screen) {
 function renderStartScreen() {
   cancelScene1();
   revisitNotice.hidden = !isCompletedBrowser();
+  loadStatus.textContent = scene1Ready ? "준비 완료" : "장면을 준비하고 있습니다…";
   showOnly("start");
 }
 
@@ -191,8 +196,8 @@ function preloadImage(src) {
   });
 }
 
-function preloadScene1() {
-  if (scene1LoadingPromise) {
+function preloadScene1(force = false) {
+  if (scene1LoadingPromise && !force) {
     return scene1LoadingPromise;
   }
 
@@ -204,10 +209,10 @@ function preloadScene1() {
         console.warn("Scene 1 일부 에셋 로딩 실패:", failed);
       }
 
-      // 핵심 배경/지구본/로켓이 준비된 경우 재생 가능 처리.
       const critical = new Set([
         "./assets/scene01-space/star-chart-bg.png",
         "./assets/scene01-space/globe.png",
+        "./assets/scene01-space/telescope-observer.png",
         "./assets/scene01-space/rocket-idle.png",
         "./assets/scene01-space/rocket-launch.png"
       ]);
@@ -227,7 +232,7 @@ function preloadScene1() {
 }
 
 /* -------------------------------------------------------
-   Web Animations API 헬퍼
+   WAAPI helper
 ------------------------------------------------------- */
 function createAnimation(element, keyframes, options) {
   const animation = element.animate(keyframes, {
@@ -240,7 +245,7 @@ function createAnimation(element, keyframes, options) {
 }
 
 function cancelScene1() {
-  sceneRunId += 1;
+  activeSceneToken += 1;
 
   scene1Animations.forEach((animation) => {
     try {
@@ -249,81 +254,44 @@ function cancelScene1() {
   });
 
   scene1Animations = [];
-  sceneClock = null;
+  scene1Clock = null;
 }
 
 function resetScene1Elements() {
-  // WAAPI가 남긴 효과는 cancelScene1에서 제거됨.
-  // 인라인 스타일은 최소한으로 초기화.
   sceneCamera.style.transform = "";
   backgroundDrift.style.transform = "";
-  globe.style.opacity = "";
-  observer.style.opacity = "";
-  rocketGroup.style.opacity = "";
-  rocketIdle.style.opacity = "";
-  rocketLaunch.style.opacity = "";
-  propulsionBeam.style.opacity = "";
-
-  [cloudLeft, cloudRight, cloudSmall, ...decorativeElements].forEach((el) => {
-    el.style.opacity = "";
-  });
 }
 
 /* -------------------------------------------------------
    Scene 1 타임라인
-   총 12초
-   ① 지구본 등장
-   ② 카메라 하단 이동·확대
-   ③ 관측자 기립
-   ④ 우주선 등장·점화
-   ⑤ 구름 확산
-   ⑥ 줌아웃 + 전체 콜라주
-   ⑦ 우주선 곡선 이동 + 카메라 추적
-   ⑧ 중앙 복귀
-   ⑨ Scene 2 전환용 기준 상태
 ------------------------------------------------------- */
 async function playScene1() {
-  const thisRun = ++sceneRunId;
   cancelScene1();
-  // cancelScene1이 runId를 올리므로 현재 실행 ID를 다시 확보
-  const runId = ++sceneRunId;
-
+  const token = activeSceneToken;
   resetScene1Elements();
   showOnly("scene1");
 
   if (!scene1Ready) {
     sceneLoading.hidden = false;
-    enterButton.classList.add("is-loading");
-    enterButton.disabled = true;
-
-    // 실패한 적이 있더라도 다시 새로 시도할 수 있게 promise 초기화.
-    scene1LoadingPromise = null;
-    const ready = await preloadScene1();
-
+    const ready = await preloadScene1(true);
     sceneLoading.hidden = true;
-    enterButton.classList.remove("is-loading");
-    enterButton.disabled = false;
 
     if (!ready) {
-      // 핵심 에셋이 없으면 빈 화면에서 멈추지 않고 Scene 14로 이동.
       console.error("Scene 1 핵심 에셋을 불러오지 못했습니다.");
       renderScene14();
       return;
     }
   }
 
-  if (runId !== sceneRunId) {
-    return;
-  }
+  if (token !== activeSceneToken) return;
 
-  /* 배경 부유 — 카메라와 독립 */
   createAnimation(
     backgroundDrift,
     [
-      { transform: "translate3d(-1.2%, 0.7%, 0) scale(1.035)", offset: 0 },
-      { transform: "translate3d(1.1%, -0.5%, 0) scale(1.055)", offset: 0.36 },
-      { transform: "translate3d(-0.4%, -1.1%, 0) scale(1.045)", offset: 0.72 },
-      { transform: "translate3d(0.5%, -1.8%, 0) scale(1.06)", offset: 1 }
+      { transform: "translate3d(-1.1%, 0.8%, 0) scale(1.035)", offset: 0 },
+      { transform: "translate3d(0.8%, -0.4%, 0) scale(1.05)", offset: 0.35 },
+      { transform: "translate3d(-0.6%, -1.0%, 0) scale(1.045)", offset: 0.72 },
+      { transform: "translate3d(0.5%, -1.7%, 0) scale(1.058)", offset: 1 }
     ],
     {
       duration: SCENE1_DURATION,
@@ -331,169 +299,186 @@ async function playScene1() {
     }
   );
 
-  /* 카메라 */
   createAnimation(
     sceneCamera,
     [
       { transform: "translate3d(0, 0, 0) scale(1)", offset: 0 },
-      // globe 이후 하단으로 이동·확대
-      { transform: "translate3d(0, -10%, 0) scale(1.28)", offset: 0.17 },
-      { transform: "translate3d(0, -10%, 0) scale(1.28)", offset: 0.39 },
-      // 전체 콜라주 공개
-      { transform: "translate3d(0, 1.5%, 0) scale(0.86)", offset: 0.56 },
-      // 로켓을 느슨하게 따라감
-      { transform: "translate3d(-3%, 6%, 0) scale(0.96)", offset: 0.69 },
-      { transform: "translate3d(4%, 10%, 0) scale(1.03)", offset: 0.81 },
-      // 중앙 복귀
-      { transform: "translate3d(0, 0, 0) scale(1)", offset: 0.94 },
-      // Scene 2 match-cut 준비용 anchor position
-      { transform: "translate3d(0, -2%, 0) scale(1.025)", offset: 1 }
+      { transform: "translate3d(0, -18%, 0) scale(1.8)", offset: 0.18 },
+      { transform: "translate3d(0, -19%, 0) scale(1.88)", offset: 0.40 },
+      { transform: "translate3d(0, 1.5%, 0) scale(0.87)", offset: 0.57 },
+      { transform: "translate3d(-2%, 3%, 0) scale(0.95)", offset: 0.74 },
+      { transform: "translate3d(2%, 5%, 0) scale(1.00)", offset: 0.86 },
+      { transform: "translate3d(0, 0, 0) scale(1)", offset: 0.95 },
+      { transform: "translate3d(0, -2%, 0) scale(1.02)", offset: 1 }
     ],
     {
       duration: SCENE1_DURATION,
-      easing: "cubic-bezier(0.45, 0.05, 0.18, 1)"
+      easing: "cubic-bezier(0.42, 0.05, 0.17, 1)"
     }
   );
 
-  /* 지구본 */
   createAnimation(
     globe,
     [
-      { opacity: 0, transform: "translate3d(0, 33%, 0) scale(0.94)", offset: 0 },
-      { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)", offset: 0.09 },
+      { opacity: 0, transform: "translate3d(0, 30%, 0) scale(0.92)", offset: 0 },
+      { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)", offset: 0.10 },
       { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)", offset: 1 }
-    ],
-    { duration: SCENE1_DURATION, easing: "cubic-bezier(.2,.8,.25,1)" }
-  );
-
-  /* 관측자 */
-  createAnimation(
-    observer,
-    [
-      { opacity: 0, transform: "translate3d(0, 28%, 0) scale(0.94)", offset: 0 },
-      { opacity: 0, transform: "translate3d(0, 28%, 0) scale(0.94)", offset: 0.17 },
-      { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)", offset: 0.25 },
-      { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)", offset: 1 }
-    ],
-    { duration: SCENE1_DURATION, easing: "cubic-bezier(.16,.82,.28,1)" }
-  );
-
-  /* 로켓 그룹: 등장 → 점화 후 곡선 비행 */
-  createAnimation(
-    rocketGroup,
-    [
-      { opacity: 0, transform: "translate3d(0, 28%, 0) rotate(4deg) scale(.82)", offset: 0 },
-      { opacity: 0, transform: "translate3d(0, 28%, 0) rotate(4deg) scale(.82)", offset: 0.245 },
-      { opacity: 1, transform: "translate3d(0, 0, 0) rotate(1deg) scale(1)", offset: 0.32 },
-      { opacity: 1, transform: "translate3d(0, 0, 0) rotate(1deg) scale(1)", offset: 0.53 },
-      // 우상향
-      { opacity: 1, transform: "translate3d(85%, -95%, 0) rotate(18deg) scale(.98)", offset: 0.62 },
-      { opacity: 1, transform: "translate3d(115%, -220%, 0) rotate(8deg) scale(.94)", offset: 0.70 },
-      // 곡선 상단 회전
-      { opacity: 1, transform: "translate3d(55%, -340%, 0) rotate(-28deg) scale(.88)", offset: 0.77 },
-      { opacity: 1, transform: "translate3d(-130%, -405%, 0) rotate(-52deg) scale(.80)", offset: 0.85 },
-      // 좌측으로 비행하며 퇴장
-      { opacity: 1, transform: "translate3d(-365%, -380%, 0) rotate(-68deg) scale(.70)", offset: 0.93 },
-      { opacity: 0, transform: "translate3d(-500%, -350%, 0) rotate(-74deg) scale(.64)", offset: 1 }
     ],
     {
       duration: SCENE1_DURATION,
-      easing: "cubic-bezier(.45,.02,.28,1)"
+      easing: "cubic-bezier(.2,.8,.25,1)"
     }
   );
 
-  /* 우주선 idle → launch 이미지 전환 */
+  createAnimation(
+    observer,
+    [
+      { opacity: 0, transform: "perspective(1200px) rotateX(87deg) translate3d(0, 18%, 0) scale(0.72)", offset: 0 },
+      { opacity: 0, transform: "perspective(1200px) rotateX(87deg) translate3d(0, 18%, 0) scale(0.72)", offset: 0.16 },
+      { opacity: 1, transform: "perspective(1200px) rotateX(70deg) translate3d(0, 12%, 0) scale(0.80)", offset: 0.21 },
+      { opacity: 1, transform: "perspective(1200px) rotateX(32deg) translate3d(0, 6%, 0) scale(0.93)", offset: 0.26 },
+      { opacity: 1, transform: "perspective(1200px) rotateX(0deg) translate3d(0, 0, 0) scale(1)", offset: 0.31 },
+      { opacity: 1, transform: "perspective(1200px) rotateX(0deg) translate3d(0, 0, 0) scale(1)", offset: 1 }
+    ],
+    {
+      duration: SCENE1_DURATION,
+      easing: "cubic-bezier(.16,.85,.24,1)"
+    }
+  );
+
+  createAnimation(
+    rocketGroup,
+    [
+      { opacity: 0, transform: "translate3d(0, 28%, 0) scale(0.62) rotate(4deg)", offset: 0 },
+      { opacity: 0, transform: "translate3d(0, 28%, 0) scale(0.62) rotate(4deg)", offset: 0.22 },
+      { opacity: 1, transform: "translate3d(0, 0, 0) scale(1.02) rotate(1deg)", offset: 0.30 },
+      { opacity: 1, transform: "translate3d(0, 0, 0) scale(1) rotate(0deg)", offset: 0.35 },
+      { opacity: 1, transform: "translate3d(0, 0, 0) scale(1) rotate(0deg)", offset: 0.48 },
+      { opacity: 1, transform: "translate3d(18%, -48%, 0) scale(0.98) rotate(7deg)", offset: 0.64 },
+      { opacity: 1, transform: "translate3d(8%, -150%, 0) scale(0.95) rotate(-8deg)", offset: 0.73 },
+      { opacity: 1, transform: "translate3d(-8%, -265%, 0) scale(0.90) rotate(-27deg)", offset: 0.81 },
+      { opacity: 1, transform: "translate3d(-58%, -355%, 0) scale(0.82) rotate(-48deg)", offset: 0.89 },
+      { opacity: 1, transform: "translate3d(-122%, -392%, 0) scale(0.74) rotate(-61deg)", offset: 0.96 },
+      { opacity: 0, transform: "translate3d(-175%, -385%, 0) scale(0.68) rotate(-65deg)", offset: 1 }
+    ],
+    {
+      duration: SCENE1_DURATION,
+      easing: "cubic-bezier(.4,.03,.28,1)"
+    }
+  );
+
   createAnimation(
     rocketIdle,
     [
       { opacity: 1, offset: 0 },
-      { opacity: 1, offset: 0.34 },
-      { opacity: 0, offset: 0.37 },
+      { opacity: 1, offset: 0.425 },
+      { opacity: 0, offset: 0.426 },
       { opacity: 0, offset: 1 }
     ],
-    { duration: SCENE1_DURATION, easing: "linear" }
+    {
+      duration: SCENE1_DURATION,
+      easing: "linear"
+    }
   );
 
   createAnimation(
     rocketLaunch,
     [
       { opacity: 0, offset: 0 },
-      { opacity: 0, offset: 0.345 },
-      { opacity: 1, offset: 0.37 },
+      { opacity: 0, offset: 0.425 },
+      { opacity: 1, offset: 0.426 },
       { opacity: 1, offset: 1 }
     ],
-    { duration: SCENE1_DURATION, easing: "linear" }
+    {
+      duration: SCENE1_DURATION,
+      easing: "linear"
+    }
   );
 
-  createAnimation(
-    propulsionBeam,
-    [
-      { opacity: 0, transform: "scaleY(.65)", offset: 0 },
-      { opacity: 0, transform: "scaleY(.65)", offset: 0.345 },
-      { opacity: 0.8, transform: "scaleY(.92)", offset: 0.37 },
-      { opacity: 1, transform: "scaleY(1.08)", offset: 0.43 },
-      { opacity: 0.72, transform: "scaleY(.93)", offset: 0.49 },
-      { opacity: 0.92, transform: "scaleY(1.03)", offset: 0.58 },
-      { opacity: 0.82, transform: "scaleY(.97)", offset: 0.88 },
-      { opacity: 0, transform: "scaleY(.8)", offset: 1 }
-    ],
-    { duration: SCENE1_DURATION, easing: "ease-in-out" }
-  );
-
-  /* 발사 구름 */
   createAnimation(
     cloudLeft,
     [
-      { opacity: 0, transform: "translate3d(20%, 18%, 0) scale(.7)", offset: 0 },
-      { opacity: 0, transform: "translate3d(20%, 18%, 0) scale(.7)", offset: 0.35 },
-      { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)", offset: 0.45 },
-      { opacity: 1, transform: "translate3d(-5%, 1%, 0) scale(1.05)", offset: 0.58 },
-      { opacity: 1, transform: "translate3d(-7%, 2%, 0) scale(1.07)", offset: 1 }
+      { opacity: 0, transform: "translate3d(25%, 10%, 0) scale(0.42)", offset: 0 },
+      { opacity: 0, transform: "translate3d(25%, 10%, 0) scale(0.42)", offset: 0.428 },
+      { opacity: 0.92, transform: "translate3d(10%, 2%, 0) scale(0.70)", offset: 0.48 },
+      { opacity: 1, transform: "translate3d(-2%, 0, 0) scale(0.92)", offset: 0.60 },
+      { opacity: 1, transform: "translate3d(-8%, -1%, 0) scale(1.02)", offset: 1 }
     ],
-    { duration: SCENE1_DURATION, easing: "cubic-bezier(.16,.74,.3,1)" }
+    {
+      duration: SCENE1_DURATION,
+      easing: "cubic-bezier(.16,.74,.30,1)"
+    }
   );
 
   createAnimation(
     cloudRight,
     [
-      { opacity: 0, transform: "translate3d(-18%, 16%, 0) scale(.7)", offset: 0 },
-      { opacity: 0, transform: "translate3d(-18%, 16%, 0) scale(.7)", offset: 0.35 },
-      { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)", offset: 0.45 },
-      { opacity: 1, transform: "translate3d(5%, 0, 0) scale(1.05)", offset: 0.58 },
-      { opacity: 1, transform: "translate3d(7%, 1%, 0) scale(1.07)", offset: 1 }
+      { opacity: 0, transform: "translate3d(-24%, 11%, 0) scale(0.42)", offset: 0 },
+      { opacity: 0, transform: "translate3d(-24%, 11%, 0) scale(0.42)", offset: 0.428 },
+      { opacity: 0.90, transform: "translate3d(-8%, 2%, 0) scale(0.70)", offset: 0.48 },
+      { opacity: 1, transform: "translate3d(1%, 0, 0) scale(0.92)", offset: 0.60 },
+      { opacity: 1, transform: "translate3d(8%, -1%, 0) scale(1.02)", offset: 1 }
     ],
-    { duration: SCENE1_DURATION, easing: "cubic-bezier(.16,.74,.3,1)" }
+    {
+      duration: SCENE1_DURATION,
+      easing: "cubic-bezier(.16,.74,.30,1)"
+    }
   );
 
   createAnimation(
     cloudSmall,
     [
-      { opacity: 0, transform: "translate3d(0, 16%, 0) scale(.65)", offset: 0 },
-      { opacity: 0, transform: "translate3d(0, 16%, 0) scale(.65)", offset: 0.36 },
-      { opacity: 0.95, transform: "translate3d(0, 0, 0) scale(1)", offset: 0.46 },
-      { opacity: 0.85, transform: "translate3d(-6%, -1%, 0) scale(1.03)", offset: 1 }
+      { opacity: 0, transform: "translate3d(8%, 10%, 0) scale(0.38)", offset: 0 },
+      { opacity: 0, transform: "translate3d(8%, 10%, 0) scale(0.38)", offset: 0.435 },
+      { opacity: 0.90, transform: "translate3d(0, 0, 0) scale(0.64)", offset: 0.49 },
+      { opacity: 0.85, transform: "translate3d(-28%, 1%, 0) scale(0.78)", offset: 0.62 },
+      { opacity: 0.74, transform: "translate3d(-74%, 3%, 0) scale(1.02)", offset: 1 }
     ],
-    { duration: SCENE1_DURATION, easing: "ease-out" }
+    {
+      duration: SCENE1_DURATION,
+      easing: "ease-out"
+    }
   );
 
-  /* 전체 콜라주 장식 오브젝트 */
   decorativeElements.forEach((element, index) => {
     const dx = index % 2 === 0 ? "-4%" : "4%";
     const dy = index % 3 === 0 ? "-3%" : "3%";
 
-    createAnimation(
-      element,
-      [
-        { opacity: 0, transform: `translate3d(${dx}, ${dy}, 0) scale(.92)`, offset: 0 },
-        { opacity: 0, transform: `translate3d(${dx}, ${dy}, 0) scale(.92)`, offset: 0.43 },
-        { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)", offset: 0.56 + index * 0.008 },
-        { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)", offset: 1 }
-      ],
-      { duration: SCENE1_DURATION, easing: "ease-out" }
-    );
+    let revealFrames = [
+      { opacity: 0, transform: `translate3d(${dx}, ${dy}, 0) scale(0.92)`, offset: 0 },
+      { opacity: 0, transform: `translate3d(${dx}, ${dy}, 0) scale(0.92)`, offset: 0.46 },
+      { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)", offset: 0.58 },
+      { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)", offset: 1 }
+    ];
+
+    if (element === ladyOnStar) {
+      revealFrames = [
+        { opacity: 0, transform: "translate3d(-4%, 2%, 0) scale(0.92)", offset: 0 },
+        { opacity: 0, transform: "translate3d(-4%, 2%, 0) scale(0.92)", offset: 0.46 },
+        { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)", offset: 0.58 },
+        { opacity: 1, transform: "translate3d(0, -1.4%, 0) scale(1)", offset: 0.74 },
+        { opacity: 1, transform: "translate3d(0, 0.8%, 0) scale(1)", offset: 0.88 },
+        { opacity: 1, transform: "translate3d(0, -0.6%, 0) scale(1)", offset: 1 }
+      ];
+    }
+
+    if (element === deityFigure) {
+      revealFrames = [
+        { opacity: 0, transform: "translate3d(4%, 2%, 0) scale(0.92)", offset: 0 },
+        { opacity: 0, transform: "translate3d(4%, 2%, 0) scale(0.92)", offset: 0.46 },
+        { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)", offset: 0.585 },
+        { opacity: 1, transform: "translate3d(0, 1.1%, 0) scale(1)", offset: 0.75 },
+        { opacity: 1, transform: "translate3d(0, -0.7%, 0) scale(1)", offset: 0.90 },
+        { opacity: 1, transform: "translate3d(0, 0.5%, 0) scale(1)", offset: 1 }
+      ];
+    }
+
+    createAnimation(element, revealFrames, {
+      duration: SCENE1_DURATION,
+      easing: "ease-out"
+    });
   });
 
-  /* Scene Clock: visibilitychange 시 다른 애니메이션과 함께 pause/resume 된다. */
   sceneClock = createAnimation(
     scene1Screen,
     [{ opacity: 1 }, { opacity: 1 }],
@@ -506,12 +491,7 @@ async function playScene1() {
     return;
   }
 
-  if (runId !== sceneRunId) {
-    return;
-  }
-
-  // Stage 3에서는 Scene 2가 아직 없으므로 Scene 14로 임시 연결.
-  // Scene 2 구현 시 이 한 줄을 Scene 2 진입 함수로 교체한다.
+  if (token !== activeSceneToken) return;
   renderScene14();
 }
 
@@ -519,9 +499,7 @@ async function playScene1() {
    앱 백그라운드 처리
 ------------------------------------------------------- */
 document.addEventListener("visibilitychange", () => {
-  if (scene1Screen.hidden) {
-    return;
-  }
+  if (scene1Screen.hidden) return;
 
   scene1Animations.forEach((animation) => {
     try {
@@ -629,12 +607,13 @@ enterButton.addEventListener("click", async () => {
   enterButton.classList.add("is-loading");
   enterButton.disabled = true;
   loadStatus.textContent = scene1Ready ? "우주로 이동합니다…" : "장면을 불러오는 중입니다…";
+  sceneLoading.hidden = false;
 
   if (!scene1Ready) {
-    scene1LoadingPromise = null;
-    await preloadScene1();
+    await preloadScene1(true);
   }
 
+  sceneLoading.hidden = true;
   enterButton.classList.remove("is-loading");
   enterButton.disabled = false;
 

@@ -1,106 +1,77 @@
-# 개막식 참여형 웹콘텐츠 — 3단계 (Scene 1)
+# 개막식 참여형 웹콘텐츠 — 3단계 Scene 1 수정본
 
-이번 버전은 **Scene 1: 우주 탐험**을 실제 에셋으로 구현한 테스트 버전입니다.
+이번 수정본은 사용자가 요청한 Scene 1 연출 조정을 반영한 버전입니다.
 
-## 구현된 흐름
+## 반영한 수정 사항
 
-`시작 화면 → [입장하기] → Scene 1 약 12초 → Scene 14`
+1. Scene 1 전체 재생 시간 2배
+   - 12초 → 24초로 조정
 
-Scene 2는 아직 만들지 않았기 때문에 Scene 1 종료 후 **임시로 Scene 14로 연결**됩니다.
-다음 단계에서 Scene 2를 제작하면 `renderScene14()` 호출을 Scene 2 진입으로 교체합니다.
+2. 지구본 확대
+   - 화면 하단을 크게 채우도록 확대
+   - 좌우/하단 경계가 화면 밖으로 잘리도록 배치
 
-## Scene 1 구현 내용
+3. 관측자 등장 연출 변경
+   - 단순 수직 등장 대신
+   - `perspective + rotateX` 기반으로 눕혀진 상태에서 세워지는 3D 느낌 구현
 
-1. 지구본 등장
-2. 카메라 하단 이동·확대
-3. 망원경 관측자 등장
-4. 우주선 등장
-5. 우주선 점화(Idle → Launch)
-6. 좌·우·소형 구름 확산
-7. 카메라 Zoom Out + 전체 콜라주 공개
-8. 우주선 곡선 비행
-9. 카메라가 우주선 이동을 느슨하게 추적
-10. 카메라 중앙 복귀
-11. Scene 2 Match Cut을 위한 Anchor 상태로 정리
+4. 우주선/구름 순서 조정
+   - 우주선 등장
+   - 점화 우주선으로 순간 전환
+   - 이후 좌/우 구름이 천천히 나타나며 퍼짐
+   - 작은 구름은 우주선 하단 근처에서 생성되어 왼쪽으로 확산
 
-## 기술 구조
+5. 일반 우주선 / 점화 우주선 전환 수정
+   - 두 이미지가 같은 그룹 안에서 같은 좌표·같은 크기로 겹침
+   - 페이드가 아니라 거의 즉시 전환
 
-- `sceneCamera`: 가상 카메라 이동/확대
-- `backgroundDrift`: 우주 배경 자체의 느린 부유
-- 개별 오브젝트: 서로 독립된 transform / opacity
-- Web Animations API 사용
-- Scene 전체 길이: `12000ms`
-- `visibilitychange` 감지:
-  - 다른 앱/탭으로 이동 시 Scene 1 일시정지
-  - 복귀 시 이어서 재생
-- 시작 화면에서 Scene 1 에셋 사전 로딩
-- 핵심 에셋 로딩 실패 시 빈 화면에서 멈추지 않고 Scene 14로 이동
+6. 달 삭제
+   - `moon.png` 사용 중단
+   - 새 에셋 `planet-jupiter.png`, `planet-green.png` 추가 및 배치
 
-## 추가된 에셋
+7. 우주선 궤적 조정
+   - 화면 중앙(은하수 근처)으로 더 들어오도록 조정
+   - 비행 속도도 더 여유 있게 조정
 
-```text
-assets/
-├─ fonts/
-│  └─ acc-children-fall.ttf
-└─ scene01-space/
-   ├─ star-chart-bg.png
-   ├─ globe.png
-   ├─ telescope-observer.png
-   ├─ rocket-idle.png
-   ├─ rocket-launch.png
-   ├─ propulsion-beam.png
-   ├─ cloud-left.png
-   ├─ cloud-right.png
-   ├─ cloud-small.png
-   ├─ lady-on-star.png
-   ├─ deity-figure.png
-   ├─ moth.png
-   ├─ moon.png
-   └─ saturn.png
-```
+8. 상단 오브젝트 미세 부유
+   - 최상단 여인 / 신 오브젝트에 느린 상하 부유 모션 추가
 
-## GitHub에 반영할 것
+9. 추가 발사광 제거
+   - 별도 추진광(propulsion-beam) 사용 제거
+   - 점화 우주선 이미지 자체만 사용
 
-이번에는 기존 코드만 교체하는 것이 아니라 **assets 폴더도 새로 추가**해야 합니다.
+10. 관측자와 우주선이 등장할 때 시야를 더 좁게
+    - 카메라 확대 배율을 크게 조정
+    - 이후 줌아웃하면서 상단 오브젝트 등장
 
-가장 안전한 방법:
+## 새로 추가된 에셋
 
-1. ZIP 압축 해제
-2. 기존 GitHub 저장소에서
-   - `index.html`
-   - `css/common.css`
-   - `js/mobile.js`
-   - `README.md`
-   를 새 버전으로 교체
-3. `assets/` 폴더 전체를 저장소 루트에 추가
-4. `display/`, `js/display.js`, `js/firebase-config.js`, `database.rules.json`은 기존 버전을 유지해도 됩니다.
+- `assets/scene01-space/planet-jupiter.png`
+- `assets/scene01-space/planet-green.png`
 
-ZIP 전체를 저장소 루트에 그대로 덮어 올려도 됩니다.
+## 주요 교체 파일
 
-## 테스트 체크리스트
+- `index.html`
+- `css/common.css`
+- `js/mobile.js`
+- `README.md`
+- `assets/scene01-space/planet-jupiter.png`
+- `assets/scene01-space/planet-green.png`
 
-### 첫 진입
-- 시작 화면이 별자리 우주 배경으로 표시되는가
-- `입장하기`를 누르면 Scene 1이 시작되는가
-- 약 12초 후 Scene 14로 자동 이동하는가
+## GitHub 반영 방법
 
-### Scene 1
-- 지구본 → 관측자 → 로켓 순으로 등장하는가
-- 로켓이 Idle 이미지에서 점화 이미지로 전환되는가
-- 점화 시 구름이 퍼지는가
-- 중반부에 카메라가 Zoom Out되며 장식 오브젝트가 나타나는가
-- 로켓이 화면 아래 우측에서 위쪽으로 날아간 뒤 좌측 방향으로 이동하는가
-- 마지막에 카메라가 중앙으로 복귀하는가
+가장 쉬운 방법은 이 ZIP을 풀고 저장소 루트에 덮어쓰는 것입니다.
 
-### 앱 전환
-- Scene 1 재생 중 홈 화면/다른 앱으로 이동
-- 복귀 시 Scene 1이 건너뛰지 않고 이어서 재생되는가
+반드시 포함되어야 하는 변경:
+- 코드 4개 파일 교체
+- `assets/scene01-space/` 안에 위 2개 행성 파일 추가
 
-### 참여 완료 브라우저
-- 애니메이션은 다시 재생 가능한가
-- Scene 14 도달 시 재제출은 제한되는가
+## 테스트 포인트
 
-## 조정 예정
-
-Scene 1의 오브젝트 위치·속도·카메라 배율은 **실제 스마트폰에서 시각적으로 확인한 뒤 수정하는 단계**입니다.
-현재는 개발요청서의 순서와 장면 참고 이미지에 맞춘 1차 구현입니다.
+- 재생시간이 이전보다 충분히 느려졌는가
+- 지구본이 하단을 꽉 채우는가
+- 관측자가 누운 상태에서 세워지는 느낌이 드는가
+- 우주선 → 점화 전환 → 구름 확산 순서가 맞는가
+- 발사광이 사라졌는가
+- 줌아웃 시 상단 여인/신/행성/토성이 자연스럽게 드러나는가
+- 우주선 비행 궤적이 이전보다 중앙에 가까운가

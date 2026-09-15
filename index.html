@@ -33,24 +33,23 @@
     <section id="scene1Screen" class="app-screen scene-screen" hidden aria-label="우주 탐험 애니메이션">
       <div id="sceneViewport" class="scene-viewport">
 
-        <!-- 가상 카메라: 카메라 이동/확대는 이 레이어만 제어 -->
         <div id="sceneCamera" class="scene-camera">
           <div id="sceneWorld" class="scene-world">
-
-            <!-- 배경 자체의 느린 부유는 카메라 transform과 별개 -->
             <div id="backgroundDrift" class="background-drift">
               <img class="scene-bg" src="./assets/scene01-space/star-chart-bg.png" alt="" draggable="false" />
             </div>
 
-            <!-- 전체 콜라주 공개 시 나타나는 장식 오브젝트 -->
+            <!-- 최종 Zoom Out 이후 등장하는 상단/중단 오브젝트 -->
             <img id="mothTop" class="scene-object decorative moth moth-top"
                  src="./assets/scene01-space/moth.png" alt="" draggable="false" />
             <img id="ladyOnStar" class="scene-object decorative lady-on-star"
                  src="./assets/scene01-space/lady-on-star.png" alt="" draggable="false" />
             <img id="deityFigure" class="scene-object decorative deity-figure"
                  src="./assets/scene01-space/deity-figure.png" alt="" draggable="false" />
-            <img id="moon" class="scene-object decorative moon"
-                 src="./assets/scene01-space/moon.png" alt="" draggable="false" />
+            <img id="jupiter" class="scene-object decorative planet-jupiter"
+                 src="./assets/scene01-space/planet-jupiter.png" alt="" draggable="false" />
+            <img id="planetGreen" class="scene-object decorative planet-green"
+                 src="./assets/scene01-space/planet-green.png" alt="" draggable="false" />
             <img id="saturn" class="scene-object decorative saturn"
                  src="./assets/scene01-space/saturn.png" alt="" draggable="false" />
             <img id="mothLower" class="scene-object decorative moth moth-lower"
@@ -62,10 +61,7 @@
             <img id="observer" class="scene-object observer"
                  src="./assets/scene01-space/telescope-observer.png" alt="" draggable="false" />
 
-            <!-- 로켓: 위치 이동은 그룹, 점화 상태는 내부 이미지로 분리 -->
             <div id="rocketGroup" class="rocket-group">
-              <img id="propulsionBeam" class="rocket-beam"
-                   src="./assets/scene01-space/propulsion-beam.png" alt="" draggable="false" />
               <img id="rocketIdle" class="rocket-image rocket-idle"
                    src="./assets/scene01-space/rocket-idle.png" alt="" draggable="false" />
               <img id="rocketLaunch" class="rocket-image rocket-launch"
@@ -87,7 +83,6 @@
           <p>우주를 준비하고 있습니다…</p>
         </div>
 
-        <!-- 개발 중 장면 위치 확인용. 최종 버전에서는 제거 가능 -->
         <div id="sceneDebugBadge" class="scene-debug-badge">SCENE 1 · 우주 탐험</div>
       </div>
     </section>
