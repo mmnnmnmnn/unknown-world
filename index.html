@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="dark" />
+  <title>데이터 너머, 미지의 세계 — 참여 테스트</title>
+  <link rel="stylesheet" href="./css/common.css" />
+</head>
+<body class="mobile-page">
+  <main class="mobile-shell">
+    <section class="panel">
+      <p class="eyebrow">1단계 연결 테스트</p>
+      <h1>당신은 무엇이 궁금한가요?</h1>
+      <p class="description">
+        현재 화면은 애니메이션 제작 전, Firebase 저장과 대형 모니터 실시간 연동을 확인하기 위한 임시 화면입니다.
+      </p>
+
+      <form id="responseForm" novalidate>
+        <label for="nickname">닉네임 <span aria-hidden="true">*</span></label>
+        <input
+          id="nickname"
+          name="nickname"
+          type="text"
+          minlength="1"
+          maxlength="10"
+          autocomplete="off"
+          required
+          placeholder="1~10자"
+        />
+
+        <label for="question">내가 알고 싶은 것은 <span aria-hidden="true">*</span></label>
+        <input
+          id="question"
+          name="question"
+          type="text"
+          minlength="1"
+          maxlength="20"
+          autocomplete="off"
+          required
+          placeholder="1~20자"
+        />
+
+        <button id="submitButton" type="submit">제출</button>
+        <p id="formMessage" class="message" role="status" aria-live="polite"></p>
+      </form>
+
+      <div id="completedState" class="completed" hidden>
+        <h2>제출이 완료되었습니다.</h2>
+        <p>이 브라우저에서는 추가 제출이 제한됩니다.</p>
+      </div>
+
+      <div id="configWarning" class="warning" hidden>
+        Firebase 설정값이 아직 입력되지 않았습니다. <code>js/firebase-config.js</code>를 수정해주세요.
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="./js/mobile.js"></script>
+</body>
+</html>
