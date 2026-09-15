@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="dark" />
+  <title>데이터 너머, 미지의 세계</title>
+  <link rel="stylesheet" href="./css/common.css" />
+</head>
+<body class="mobile-page">
+  <main id="mobileApp" class="mobile-app">
+
+    <!-- 시작 화면 -->
+    <section id="startScreen" class="app-screen start-screen">
+      <div class="start-bg" aria-hidden="true"></div>
+      <div class="start-vignette" aria-hidden="true"></div>
+
+      <div class="start-content">
+        <p class="start-kicker">데이터 너머, 미지의 세계</p>
+        <button id="enterButton" class="enter-button" type="button">
+          <span>입장하기</span>
+        </button>
+        <p id="loadStatus" class="load-status" aria-live="polite">장면을 준비하고 있습니다…</p>
+
+        <div id="revisitNotice" class="revisit-notice" hidden>
+          이미 참여를 완료한 브라우저입니다.<br />
+          애니메이션은 다시 볼 수 있지만 질문은 다시 제출할 수 없습니다.
+        </div>
+      </div>
+    </section>
+
+    <!-- Scene 1 : 우주 탐험 -->
+    <section id="scene1Screen" class="app-screen scene-screen" hidden aria-label="우주 탐험 애니메이션">
+      <div id="sceneViewport" class="scene-viewport">
+
+        <!--
+          CAMERA는 WORLD 전체를 확대/이동해서 바라보기만 합니다.
+          WORLD 내부 좌표는 카메라 변화와 무관하게 고정됩니다.
+        -->
+        <div id="sceneCamera" class="scene-camera">
+          <div id="sceneWorld" class="scene-world">
+
+            <!-- WORLD 기준 배경: 별도 drift 없음 -->
+            <img id="sceneBackground"
+                 class="scene-bg"
+                 src="./assets/scene01-space/star-chart-bg.png"
+                 alt=""
+                 draggable="false" />
+
+            <!-- 상단/중단 오브젝트 -->
+            <img id="mothTop" class="scene-object world-center decorative"
+                 src="./assets/scene01-space/moth.png" alt="" draggable="false" />
+            <img id="ladyOnStar" class="scene-object world-center decorative"
+                 src="./assets/scene01-space/lady-on-star.png" alt="" draggable="false" />
+            <img id="deityFigure" class="scene-object world-center decorative"
+                 src="./assets/scene01-space/deity-figure.png" alt="" draggable="false" />
+            <img id="jupiter" class="scene-object world-center decorative"
+                 src="./assets/scene01-space/planet-jupiter.png" alt="" draggable="false" />
+            <img id="planetGreen" class="scene-object world-center decorative"
+                 src="./assets/scene01-space/planet-green.png" alt="" draggable="false" />
+            <img id="saturn" class="scene-object world-center decorative"
+                 src="./assets/scene01-space/saturn.png" alt="" draggable="false" />
+            <img id="mothLower" class="scene-object world-center decorative"
+                 src="./assets/scene01-space/moth.png" alt="" draggable="false" />
+
+            <!-- 하단 탐험 장면 -->
+            <img id="globe" class="scene-object world-center globe"
+                 src="./assets/scene01-space/globe.png" alt="" draggable="false" />
+
+            <!-- 관측자의 y 좌표는 '발 위치' -->
+            <img id="observer" class="scene-object world-foot observer"
+                 src="./assets/scene01-space/telescope-observer.png" alt="" draggable="false" />
+
+            <!-- 우주선 그룹의 x/y는 우주선 중심 좌표 -->
+            <div id="rocketGroup" class="rocket-group world-center">
+              <img id="rocketIdle" class="rocket-image rocket-idle"
+                   src="./assets/scene01-space/rocket-idle.png" alt="" draggable="false" />
+              <img id="rocketLaunch" class="rocket-image rocket-launch"
+                   src="./assets/scene01-space/rocket-launch.png" alt="" draggable="false" />
+            </div>
+
+            <!-- 발사 구름 -->
+            <img id="cloudLeft" class="scene-object world-center launch-cloud"
+                 src="./assets/scene01-space/cloud-left.png" alt="" draggable="false" />
+            <img id="cloudRight" class="scene-object world-center launch-cloud"
+                 src="./assets/scene01-space/cloud-right.png" alt="" draggable="false" />
+            <img id="cloudSmall" class="scene-object world-center launch-cloud"
+                 src="./assets/scene01-space/cloud-small.png" alt="" draggable="false" />
+          </div>
+        </div>
+
+        <div id="sceneLoading" class="scene-loading" hidden>
+          <div class="loading-star" aria-hidden="true">✦</div>
+          <p>우주를 준비하고 있습니다…</p>
+        </div>
+
+        <div id="sceneDebugBadge" class="scene-debug-badge">SCENE 1 · WORLD/TIMELINE</div>
+      </div>
+    </section>
+
+    <!-- Scene 14 : Scene 1 종료 뒤 임시 연결 -->
+    <section id="scene14Screen" class="app-screen form-screen" hidden>
+      <div class="form-shell">
+        <p class="form-kicker">당신은 무엇이 궁금한가요?</p>
+        <h1>내가 알고 싶은 것은</h1>
+
+        <div id="scene14Warning" class="warning" hidden>
+          Firebase 설정이 완료되지 않아 제출 기능을 사용할 수 없습니다.
+        </div>
+
+        <form id="responseForm" class="response-form" novalidate>
+          <label for="nickname">닉네임</label>
+          <input id="nickname" name="nickname" type="text"
+                 minlength="1" maxlength="10" autocomplete="off"
+                 required placeholder="1~10자" />
+
+          <label for="question">질문</label>
+          <input id="question" name="question" type="text"
+                 minlength="1" maxlength="20" autocomplete="off"
+                 required placeholder="1~20자" />
+
+          <button id="submitButton" class="submit-button" type="submit">제출</button>
+          <p id="formMessage" class="form-message" role="status" aria-live="polite"></p>
+        </form>
+
+        <section id="completedState" class="completed-panel" hidden>
+          <div class="completion-star-wrap" aria-hidden="true">
+            <span class="completion-star">✦</span>
+            <span class="completion-ring completion-ring-a"></span>
+            <span class="completion-ring completion-ring-b"></span>
+          </div>
+
+          <h2 id="completedTitle">제출이 완료되었습니다.</h2>
+          <p class="completed-copy">질문이 하나의 별이 되어 대형 화면에 추가됩니다.</p>
+
+          <dl id="submissionSummary" class="submission-summary"></dl>
+
+          <button id="replayButton" class="replay-button" type="button">
+            애니메이션 다시 보기
+          </button>
+        </section>
+      </div>
+    </section>
+
+  </main>
+
+  <script type="module" src="./js/mobile.js"></script>
+</body>
+</html>
