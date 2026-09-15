@@ -1,6 +1,3 @@
-/* -------------------------------------------------------
-   공통 / 폰트
-------------------------------------------------------- */
 @font-face {
   font-family: "ACCChildrenFall";
   src: url("../assets/fonts/acc-children-fall.ttf") format("truetype");
@@ -8,7 +5,6 @@
 }
 
 [hidden] { display: none !important; }
-
 * { box-sizing: border-box; }
 
 :root {
@@ -18,8 +14,7 @@
   --scene-ratio: 0.5625;
 }
 
-html,
-body {
+html, body {
   margin: 0;
   min-height: 100%;
   overflow-x: hidden;
@@ -27,18 +22,11 @@ body {
 }
 
 body { min-height: 100dvh; }
-
-button,
-input { font: inherit; }
-
+button, input { font: inherit; }
 button { -webkit-tap-highlight-color: transparent; }
+.mobile-app, .app-screen { min-height: 100dvh; }
 
-.mobile-app,
-.app-screen { min-height: 100dvh; }
-
-/* -------------------------------------------------------
-   시작 화면
-------------------------------------------------------- */
+/* 시작 화면 */
 .start-screen {
   position: relative;
   overflow: hidden;
@@ -50,8 +38,7 @@ button { -webkit-tap-highlight-color: transparent; }
 .start-bg {
   position: absolute;
   inset: -5%;
-  background:
-    url("../assets/scene01-space/star-chart-bg.png") center 62% / cover no-repeat;
+  background: url("../assets/scene01-space/star-chart-bg.png") center 62% / cover no-repeat;
   transform: scale(1.08);
   filter: brightness(0.78) saturate(0.92);
 }
@@ -98,11 +85,7 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 
 .enter-button:active { transform: scale(0.97); }
-
-.enter-button.is-loading {
-  opacity: 0.72;
-  cursor: wait;
-}
+.enter-button.is-loading { opacity: 0.72; cursor: wait; }
 
 .load-status {
   min-height: 1.4em;
@@ -122,9 +105,7 @@ button { -webkit-tap-highlight-color: transparent; }
   line-height: 1.55;
 }
 
-/* -------------------------------------------------------
-   Scene 1 : 고정 WORLD + 독립 CAMERA
-------------------------------------------------------- */
+/* Scene 1 */
 .scene-screen {
   position: relative;
   display: grid;
@@ -145,10 +126,6 @@ button { -webkit-tap-highlight-color: transparent; }
   transform: translateZ(0);
 }
 
-/*
-  sceneCamera만 움직입니다.
-  sceneWorld와 background 자체에는 독립 drift/zoom을 주지 않습니다.
-*/
 .scene-camera {
   position: absolute;
   inset: 0;
@@ -163,33 +140,20 @@ button { -webkit-tap-highlight-color: transparent; }
   perspective: 1100px;
 }
 
-/*
-  WORLD의 0~100 좌표와 화면을 1:1로 대응시키기 위해
-  배경은 sceneWorld를 정확히 채웁니다.
-*/
 .scene-bg {
   position: absolute;
   z-index: 0;
-
-  /*
-    좌표계는 최초 9:16 모바일 화면(0~100) 그대로 유지하고,
-    배경 이미지만 그 바깥까지 넓게 깔아 카메라 이동 시 빈 영역이
-    보이지 않도록 overscan 합니다.
-  */
   left: -45%;
   top: -45%;
   width: 190%;
   height: 190%;
-
   object-fit: cover;
   user-select: none;
   pointer-events: none;
 }
 
-.scene-object,
-.rocket-group {
+.scene-object {
   position: absolute;
-  z-index: 4;
   user-select: none;
   pointer-events: none;
   will-change: left, top, transform, opacity;
@@ -205,56 +169,11 @@ button { -webkit-tap-highlight-color: transparent; }
   transform-origin: 50% 100%;
 }
 
-.decorative {
-  z-index: 3;
-  opacity: 0;
-}
-
-.globe {
-  z-index: 2;
-  opacity: 0;
-}
-
-.observer {
-  z-index: 6;
-  opacity: 0;
-}
-
-.rocket-group {
-  z-index: 8;
-  opacity: 1;
-  aspect-ratio: 1113 / 1413;
-}
-
-.rocket-image {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  user-select: none;
-  pointer-events: none;
-}
-
-.rocket-idle {
-  z-index: 3;
-  opacity: 0;
-}
-
-/* 점화 우주선만 1.5배 + 기본 우주선보다 약간 아래 */
-.rocket-launch {
-  z-index: 4;
-  top: 8%;
-  opacity: 0;
-  transform: scale(1.5);
-  transform-origin: 50% 50%;
-}
-
-.launch-cloud {
-  z-index: 7;
-  opacity: 0;
-}
+.decorative { z-index: 3; opacity: 0; }
+.globe      { z-index: 2; opacity: 0; }
+.observer   { z-index: 6; opacity: 0; }
+.rocket     { z-index: 8; opacity: 0; }
+.launch-cloud { z-index: 7; opacity: 0; }
 
 .scene-loading {
   position: absolute;
@@ -294,23 +213,17 @@ button { -webkit-tap-highlight-color: transparent; }
   pointer-events: none;
 }
 
-/* -------------------------------------------------------
-   Scene 14
-------------------------------------------------------- */
+/* Scene 14 */
 .form-screen {
   display: grid;
   place-items: center;
-  padding:
-    max(24px, env(safe-area-inset-top))
-    20px
-    max(24px, env(safe-area-inset-bottom));
+  padding: max(24px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
   background:
     radial-gradient(circle at 50% 12%, rgba(74, 98, 135, 0.18), transparent 36%),
     #07101b;
 }
 
 .form-shell { width: min(100%, 480px); }
-
 .form-kicker {
   margin: 0 0 8px;
   text-align: center;
@@ -325,15 +238,8 @@ button { -webkit-tap-highlight-color: transparent; }
   font-weight: 500;
 }
 
-.response-form {
-  display: grid;
-  gap: 10px;
-}
-
-.response-form label {
-  margin-top: 9px;
-  font-size: 15px;
-}
+.response-form { display: grid; gap: 10px; }
+.response-form label { margin-top: 9px; font-size: 15px; }
 
 .response-form input {
   width: 100%;
@@ -362,10 +268,7 @@ button { -webkit-tap-highlight-color: transparent; }
   cursor: pointer;
 }
 
-.submit-button:disabled {
-  opacity: 0.52;
-  cursor: wait;
-}
+.submit-button:disabled { opacity: 0.52; cursor: wait; }
 
 .form-message {
   min-height: 1.4em;
@@ -460,9 +363,6 @@ button { -webkit-tap-highlight-color: transparent; }
 
 .replay-button { width: 100%; }
 
-/* -------------------------------------------------------
-   공통 애니메이션
-------------------------------------------------------- */
 @keyframes loadingPulse {
   0%, 100% { opacity: 0.55; transform: scale(0.92); }
   50% { opacity: 1; transform: scale(1.08); }
@@ -473,20 +373,11 @@ button { -webkit-tap-highlight-color: transparent; }
   50% { transform: scale(1.08); opacity: 1; }
 }
 
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-@keyframes spinReverse {
-  from { transform: rotate(360deg); }
-  to { transform: rotate(0deg); }
-}
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes spinReverse { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
 
 @media (min-width: 760px) {
-  .scene-screen,
-  .start-screen { background: #03070c; }
-
+  .scene-screen, .start-screen { background: #03070c; }
   .scene-viewport {
     box-shadow:
       0 0 0 1px rgba(255, 255, 255, 0.05),
