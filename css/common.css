@@ -169,11 +169,19 @@ button { -webkit-tap-highlight-color: transparent; }
 */
 .scene-bg {
   position: absolute;
-  inset: 0;
   z-index: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: fill;
+
+  /*
+    좌표계는 최초 9:16 모바일 화면(0~100) 그대로 유지하고,
+    배경 이미지만 그 바깥까지 넓게 깔아 카메라 이동 시 빈 영역이
+    보이지 않도록 overscan 합니다.
+  */
+  left: -45%;
+  top: -45%;
+  width: 190%;
+  height: 190%;
+
+  object-fit: cover;
   user-select: none;
   pointer-events: none;
 }
