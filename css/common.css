@@ -250,16 +250,16 @@ button {
 
 .globe {
   z-index: 2;
-  left: -18%;
-  bottom: -19%;
-  width: 138%;
+  left: -20%;
+  bottom: -8%;
+  width: 144%;
   opacity: 0;
 }
 
 .observer {
   z-index: 6;
-  left: 19%;
-  bottom: 10%;
+  left: 17.5%;
+  bottom: 15%;
   width: 26%;
   opacity: 0;
   transform-origin: 50% 100%;
@@ -267,9 +267,9 @@ button {
 
 .rocket-group {
   z-index: 8;
-  right: 8%;
-  bottom: 10%;
-  width: 24%;
+  right: 16%;
+  bottom: 12%;
+  width: 21%;
   aspect-ratio: 1113 / 1413;
   opacity: 0;
   transform-origin: 50% 68%;
@@ -293,6 +293,8 @@ button {
 .rocket-launch {
   z-index: 4;
   opacity: 0;
+  transform: translateY(8%) scale(1.5);
+  transform-origin: 50% 62%;
 }
 
 .launch-cloud {
@@ -302,20 +304,20 @@ button {
 
 .cloud-left {
   left: 26%;
-  bottom: 3%;
+  bottom: 4%;
   width: 50%;
 }
 
 .cloud-right {
-  right: -2%;
-  bottom: 4%;
+  right: 7%;
+  bottom: 5%;
   width: 46%;
 }
 
 .cloud-small {
-  left: 44%;
-  bottom: 13%;
-  width: 24%;
+  left: 45%;
+  bottom: 14%;
+  width: 23%;
 }
 
 .scene-loading {
@@ -549,7 +551,6 @@ button {
   to { transform: rotate(0deg); }
 }
 
-/* Desktop preview */
 @media (min-width: 760px) {
   .scene-screen,
   .start-screen {

@@ -288,27 +288,31 @@ async function playScene1() {
   createAnimation(
     backgroundDrift,
     [
-      { transform: "translate3d(-1.1%, 0.8%, 0) scale(1.035)", offset: 0 },
-      { transform: "translate3d(0.8%, -0.4%, 0) scale(1.05)", offset: 0.35 },
-      { transform: "translate3d(-0.6%, -1.0%, 0) scale(1.045)", offset: 0.72 },
-      { transform: "translate3d(0.5%, -1.7%, 0) scale(1.058)", offset: 1 }
+      { transform: "translate3d(-0.9%, 0.7%, 0) scale(1.035)", offset: 0 },
+      { transform: "translate3d(0.7%, -0.2%, 0) scale(1.05)", offset: 0.34 },
+      { transform: "translate3d(-0.5%, -0.8%, 0) scale(1.045)", offset: 0.72 },
+      { transform: "translate3d(0.5%, -1.4%, 0) scale(1.058)", offset: 1 }
     ],
-    {
-      duration: SCENE1_DURATION,
-      easing: "ease-in-out"
-    }
+    { duration: SCENE1_DURATION, easing: "ease-in-out" }
   );
 
+  /* 카메라:
+     1) 관측자 쪽 확실히 보기
+     2) 오른쪽으로 이동하며 기본 우주선 보기
+     3) 이후 줌아웃
+  */
   createAnimation(
     sceneCamera,
     [
       { transform: "translate3d(0, 0, 0) scale(1)", offset: 0 },
-      { transform: "translate3d(0, -18%, 0) scale(1.8)", offset: 0.18 },
-      { transform: "translate3d(0, -19%, 0) scale(1.88)", offset: 0.40 },
-      { transform: "translate3d(0, 1.5%, 0) scale(0.87)", offset: 0.57 },
-      { transform: "translate3d(-2%, 3%, 0) scale(0.95)", offset: 0.74 },
-      { transform: "translate3d(2%, 5%, 0) scale(1.00)", offset: 0.86 },
-      { transform: "translate3d(0, 0, 0) scale(1)", offset: 0.95 },
+      { transform: "translate3d(18%, -22%, 0) scale(2.45)", offset: 0.16 },
+      { transform: "translate3d(18%, -22%, 0) scale(2.45)", offset: 0.32 },
+      { transform: "translate3d(-16%, -21%, 0) scale(2.45)", offset: 0.43 },
+      { transform: "translate3d(-16%, -21%, 0) scale(2.45)", offset: 0.53 },
+      { transform: "translate3d(-5%, -8%, 0) scale(1.55)", offset: 0.63 },
+      { transform: "translate3d(0, 0.5%, 0) scale(0.92)", offset: 0.73 },
+      { transform: "translate3d(4%, -1%, 0) scale(1.00)", offset: 0.84 },
+      { transform: "translate3d(0, 0, 0) scale(1)", offset: 0.94 },
       { transform: "translate3d(0, -2%, 0) scale(1.02)", offset: 1 }
     ],
     {
@@ -320,7 +324,7 @@ async function playScene1() {
   createAnimation(
     globe,
     [
-      { opacity: 0, transform: "translate3d(0, 30%, 0) scale(0.92)", offset: 0 },
+      { opacity: 0, transform: "translate3d(0, 30%, 0) scale(0.94)", offset: 0 },
       { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)", offset: 0.10 },
       { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)", offset: 1 }
     ],
@@ -333,11 +337,11 @@ async function playScene1() {
   createAnimation(
     observer,
     [
-      { opacity: 0, transform: "perspective(1200px) rotateX(87deg) translate3d(0, 18%, 0) scale(0.72)", offset: 0 },
-      { opacity: 0, transform: "perspective(1200px) rotateX(87deg) translate3d(0, 18%, 0) scale(0.72)", offset: 0.16 },
-      { opacity: 1, transform: "perspective(1200px) rotateX(70deg) translate3d(0, 12%, 0) scale(0.80)", offset: 0.21 },
-      { opacity: 1, transform: "perspective(1200px) rotateX(32deg) translate3d(0, 6%, 0) scale(0.93)", offset: 0.26 },
-      { opacity: 1, transform: "perspective(1200px) rotateX(0deg) translate3d(0, 0, 0) scale(1)", offset: 0.31 },
+      { opacity: 0, transform: "perspective(1200px) rotateX(87deg) translate3d(0, 16%, 0) scale(0.74)", offset: 0 },
+      { opacity: 0, transform: "perspective(1200px) rotateX(87deg) translate3d(0, 16%, 0) scale(0.74)", offset: 0.14 },
+      { opacity: 1, transform: "perspective(1200px) rotateX(70deg) translate3d(0, 10%, 0) scale(0.82)", offset: 0.19 },
+      { opacity: 1, transform: "perspective(1200px) rotateX(30deg) translate3d(0, 5%, 0) scale(0.94)", offset: 0.25 },
+      { opacity: 1, transform: "perspective(1200px) rotateX(0deg) translate3d(0, 0, 0) scale(1)", offset: 0.30 },
       { opacity: 1, transform: "perspective(1200px) rotateX(0deg) translate3d(0, 0, 0) scale(1)", offset: 1 }
     ],
     {
@@ -346,20 +350,25 @@ async function playScene1() {
     }
   );
 
+  /* 기본 우주선: 나타난 후 launch 전까지 정지 */
   createAnimation(
     rocketGroup,
     [
-      { opacity: 0, transform: "translate3d(0, 28%, 0) scale(0.62) rotate(4deg)", offset: 0 },
-      { opacity: 0, transform: "translate3d(0, 28%, 0) scale(0.62) rotate(4deg)", offset: 0.22 },
-      { opacity: 1, transform: "translate3d(0, 0, 0) scale(1.02) rotate(1deg)", offset: 0.30 },
+      { opacity: 0, transform: "translate3d(0, 26%, 0) scale(0.66) rotate(4deg)", offset: 0 },
+      { opacity: 0, transform: "translate3d(0, 26%, 0) scale(0.66) rotate(4deg)", offset: 0.27 },
       { opacity: 1, transform: "translate3d(0, 0, 0) scale(1) rotate(0deg)", offset: 0.35 },
-      { opacity: 1, transform: "translate3d(0, 0, 0) scale(1) rotate(0deg)", offset: 0.48 },
-      { opacity: 1, transform: "translate3d(18%, -48%, 0) scale(0.98) rotate(7deg)", offset: 0.64 },
-      { opacity: 1, transform: "translate3d(8%, -150%, 0) scale(0.95) rotate(-8deg)", offset: 0.73 },
-      { opacity: 1, transform: "translate3d(-8%, -265%, 0) scale(0.90) rotate(-27deg)", offset: 0.81 },
-      { opacity: 1, transform: "translate3d(-58%, -355%, 0) scale(0.82) rotate(-48deg)", offset: 0.89 },
-      { opacity: 1, transform: "translate3d(-122%, -392%, 0) scale(0.74) rotate(-61deg)", offset: 0.96 },
-      { opacity: 0, transform: "translate3d(-175%, -385%, 0) scale(0.68) rotate(-65deg)", offset: 1 }
+      { opacity: 1, transform: "translate3d(0, 0, 0) scale(1) rotate(0deg)", offset: 0.46 },
+
+      /* launch 후 약 2초 정도는 천천히 이동 */
+      { opacity: 1, transform: "translate3d(-8%, -8%, 0) scale(1) rotate(-5deg)", offset: 0.52 },
+      { opacity: 1, transform: "translate3d(-20%, -24%, 0) scale(1) rotate(-11deg)", offset: 0.58 },
+      { opacity: 1, transform: "translate3d(-42%, -54%, 0) scale(1) rotate(-22deg)", offset: 0.66 },
+
+      /* 파란 화살표 지점 이후 가속 */
+      { opacity: 1, transform: "translate3d(-110%, -92%, 0) scale(1) rotate(-34deg)", offset: 0.74 },
+      { opacity: 1, transform: "translate3d(-250%, -140%, 0) scale(1) rotate(-46deg)", offset: 0.82 },
+      { opacity: 1, transform: "translate3d(-430%, -188%, 0) scale(1) rotate(-56deg)", offset: 0.90 },
+      { opacity: 1, transform: "translate3d(-650%, -220%, 0) scale(1) rotate(-64deg)", offset: 1 }
     ],
     {
       duration: SCENE1_DURATION,
@@ -367,12 +376,13 @@ async function playScene1() {
     }
   );
 
+  /* 기본 우주선 → 점화 우주선: 순간 전환 */
   createAnimation(
     rocketIdle,
     [
       { opacity: 1, offset: 0 },
-      { opacity: 1, offset: 0.425 },
-      { opacity: 0, offset: 0.426 },
+      { opacity: 1, offset: 0.459 },
+      { opacity: 0, offset: 0.460 },
       { opacity: 0, offset: 1 }
     ],
     {
@@ -385,8 +395,8 @@ async function playScene1() {
     rocketLaunch,
     [
       { opacity: 0, offset: 0 },
-      { opacity: 0, offset: 0.425 },
-      { opacity: 1, offset: 0.426 },
+      { opacity: 0, offset: 0.459 },
+      { opacity: 1, offset: 0.460 },
       { opacity: 1, offset: 1 }
     ],
     {
@@ -395,13 +405,14 @@ async function playScene1() {
     }
   );
 
+  /* 구름은 launch 전까지 절대 나타나지 않음 */
   createAnimation(
     cloudLeft,
     [
-      { opacity: 0, transform: "translate3d(25%, 10%, 0) scale(0.42)", offset: 0 },
-      { opacity: 0, transform: "translate3d(25%, 10%, 0) scale(0.42)", offset: 0.428 },
-      { opacity: 0.92, transform: "translate3d(10%, 2%, 0) scale(0.70)", offset: 0.48 },
-      { opacity: 1, transform: "translate3d(-2%, 0, 0) scale(0.92)", offset: 0.60 },
+      { opacity: 0, transform: "translate3d(22%, 9%, 0) scale(0.34)", offset: 0 },
+      { opacity: 0, transform: "translate3d(22%, 9%, 0) scale(0.34)", offset: 0.470 },
+      { opacity: 0.96, transform: "translate3d(10%, 3%, 0) scale(0.60)", offset: 0.515 },
+      { opacity: 1, transform: "translate3d(0, 0, 0) scale(0.84)", offset: 0.60 },
       { opacity: 1, transform: "translate3d(-8%, -1%, 0) scale(1.02)", offset: 1 }
     ],
     {
@@ -413,10 +424,10 @@ async function playScene1() {
   createAnimation(
     cloudRight,
     [
-      { opacity: 0, transform: "translate3d(-24%, 11%, 0) scale(0.42)", offset: 0 },
-      { opacity: 0, transform: "translate3d(-24%, 11%, 0) scale(0.42)", offset: 0.428 },
-      { opacity: 0.90, transform: "translate3d(-8%, 2%, 0) scale(0.70)", offset: 0.48 },
-      { opacity: 1, transform: "translate3d(1%, 0, 0) scale(0.92)", offset: 0.60 },
+      { opacity: 0, transform: "translate3d(-22%, 10%, 0) scale(0.34)", offset: 0 },
+      { opacity: 0, transform: "translate3d(-22%, 10%, 0) scale(0.34)", offset: 0.470 },
+      { opacity: 0.94, transform: "translate3d(-8%, 3%, 0) scale(0.60)", offset: 0.515 },
+      { opacity: 1, transform: "translate3d(0, 0, 0) scale(0.84)", offset: 0.60 },
       { opacity: 1, transform: "translate3d(8%, -1%, 0) scale(1.02)", offset: 1 }
     ],
     {
@@ -428,11 +439,12 @@ async function playScene1() {
   createAnimation(
     cloudSmall,
     [
-      { opacity: 0, transform: "translate3d(8%, 10%, 0) scale(0.38)", offset: 0 },
-      { opacity: 0, transform: "translate3d(8%, 10%, 0) scale(0.38)", offset: 0.435 },
-      { opacity: 0.90, transform: "translate3d(0, 0, 0) scale(0.64)", offset: 0.49 },
-      { opacity: 0.85, transform: "translate3d(-28%, 1%, 0) scale(0.78)", offset: 0.62 },
-      { opacity: 0.74, transform: "translate3d(-74%, 3%, 0) scale(1.02)", offset: 1 }
+      { opacity: 0, transform: "translate3d(10%, 10%, 0) scale(0.30)", offset: 0 },
+      { opacity: 0, transform: "translate3d(10%, 10%, 0) scale(0.30)", offset: 0.478 },
+      { opacity: 0.90, transform: "translate3d(0, 0, 0) scale(0.56)", offset: 0.525 },
+      { opacity: 0.88, transform: "translate3d(-20%, 0, 0) scale(0.68)", offset: 0.61 },
+      { opacity: 0.82, transform: "translate3d(-62%, 2%, 0) scale(0.92)", offset: 0.78 },
+      { opacity: 0.72, transform: "translate3d(-96%, 4%, 0) scale(1.02)", offset: 1 }
     ],
     {
       duration: SCENE1_DURATION,
@@ -446,18 +458,18 @@ async function playScene1() {
 
     let revealFrames = [
       { opacity: 0, transform: `translate3d(${dx}, ${dy}, 0) scale(0.92)`, offset: 0 },
-      { opacity: 0, transform: `translate3d(${dx}, ${dy}, 0) scale(0.92)`, offset: 0.46 },
-      { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)", offset: 0.58 },
+      { opacity: 0, transform: `translate3d(${dx}, ${dy}, 0) scale(0.92)`, offset: 0.56 },
+      { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)", offset: 0.71 },
       { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)", offset: 1 }
     ];
 
     if (element === ladyOnStar) {
       revealFrames = [
         { opacity: 0, transform: "translate3d(-4%, 2%, 0) scale(0.92)", offset: 0 },
-        { opacity: 0, transform: "translate3d(-4%, 2%, 0) scale(0.92)", offset: 0.46 },
-        { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)", offset: 0.58 },
-        { opacity: 1, transform: "translate3d(0, -1.4%, 0) scale(1)", offset: 0.74 },
-        { opacity: 1, transform: "translate3d(0, 0.8%, 0) scale(1)", offset: 0.88 },
+        { opacity: 0, transform: "translate3d(-4%, 2%, 0) scale(0.92)", offset: 0.56 },
+        { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)", offset: 0.71 },
+        { opacity: 1, transform: "translate3d(0, -1.3%, 0) scale(1)", offset: 0.82 },
+        { opacity: 1, transform: "translate3d(0, 0.8%, 0) scale(1)", offset: 0.92 },
         { opacity: 1, transform: "translate3d(0, -0.6%, 0) scale(1)", offset: 1 }
       ];
     }
@@ -465,10 +477,10 @@ async function playScene1() {
     if (element === deityFigure) {
       revealFrames = [
         { opacity: 0, transform: "translate3d(4%, 2%, 0) scale(0.92)", offset: 0 },
-        { opacity: 0, transform: "translate3d(4%, 2%, 0) scale(0.92)", offset: 0.46 },
-        { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)", offset: 0.585 },
-        { opacity: 1, transform: "translate3d(0, 1.1%, 0) scale(1)", offset: 0.75 },
-        { opacity: 1, transform: "translate3d(0, -0.7%, 0) scale(1)", offset: 0.90 },
+        { opacity: 0, transform: "translate3d(4%, 2%, 0) scale(0.92)", offset: 0.56 },
+        { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)", offset: 0.715 },
+        { opacity: 1, transform: "translate3d(0, 1.0%, 0) scale(1)", offset: 0.83 },
+        { opacity: 1, transform: "translate3d(0, -0.7%, 0) scale(1)", offset: 0.93 },
         { opacity: 1, transform: "translate3d(0, 0.5%, 0) scale(1)", offset: 1 }
       ];
     }
@@ -479,14 +491,14 @@ async function playScene1() {
     });
   });
 
-  sceneClock = createAnimation(
+  scene1Clock = createAnimation(
     scene1Screen,
     [{ opacity: 1 }, { opacity: 1 }],
     { duration: SCENE1_DURATION, easing: "linear" }
   );
 
   try {
-    await sceneClock.finished;
+    await scene1Clock.finished;
   } catch {
     return;
   }
