@@ -1,56 +1,43 @@
-# Scene 2 + Scene 3 시작부 v6
+# Scene 2 + Scene 3 시작부 v7
 
-이번 버전은 기존 Scene 1 v5 뒤에 다음 장면을 연결합니다.
+이번 수정은 사용자가 요청한 아래 3가지를 반영한 버전입니다.
 
-## Scene 2
-1. Scene 1 마지막 전체 화면에서 은하수 이미지로 약 0.9초 Crossfade
-2. 은하수 전체 화면 약 3초 유지
-3. 밝은 밀집 영역을 향해 부드럽게 Zoom In
-4. 확대 과정에서 `galaxy-closeup-transition.png`로 Crossfade
-5. 확대된 은하를 잠시 유지
+## 1) Scene 2 시작 은하수 배경
+- 시작 구도를 현재 '화면에 딱 맞는 배치' 기준으로 유지한 뒤
+- **좌측 하단을 고정점으로 1.15배 확대**
+- 즉 왼쪽 아래는 고정되고, 이미지가 위/오른쪽 방향으로 커집니다.
 
-## Scene 2 → Scene 3
-사용자가 노란 원으로 지정한 은하를 Scene 3의 기준점으로 사용합니다.
+설정:
+- `MILKYWAY_BASE_SCALE = 1.15`
+- anchor = `(0, 100)`
 
-- 원본 `galaxy-cluster-bg.png` 기준 타깃 좌표:
-  - x ≈ 64.03
-  - y ≈ 31.92
+## 2) Scene 1 → Scene 2 전환
+- 기존 약 0.9초 crossfade를 **약 2.2초**로 확장
+- Scene 1이 더 오랫동안 천천히 희미해지고
+- Scene 2 은하수가 동시에 서서히 드러나도록 조정
+- 같은 은하수를 겹쳐 보고 있다는 느낌을 강화하기 위한 수정
 
-이 값은 사용자가 표시한 900×1601 주석 이미지에서
-노란 표시의 중심을 계산하여 원본 941×1672 이미지 좌표로 환산한 값입니다.
+## 3) Scene 3 전환
+- 기존보다 더 명확하게
+- **중앙 이동과 전체 줌아웃이 동시에** 진행되도록 정리
+- `clusterZoomOutStart = clusterMatchStart = 10000`
+- 즉 Scene 3 시작부에서 타깃 은하 중심 → 화면 중앙 이동과
+  14배 → 1배 zoom out이 같은 타이밍에 시작
 
-전환:
-1. closeup galaxy가 회전·축소
-2. 같은 화면 중앙에 Scene 3 타깃 은하가 나타나도록 Crossfade
-3. `galaxy-cluster-bg.png`는 타깃을 중심으로 약 14배 확대된 상태에서 시작
-4. 약 3.6초 동안 빠르게 Zoom Out
-5. 최종적으로 은하단 전체 화면에 도착
-6. 약 2초간 Scene 3 도착 화면 유지
+## Scene 2/3 주요 시간
+Scene 2 시작 = 0초 기준
 
-현재 개발 단계에서는 그 뒤 임시로 Scene 14 입력 화면으로 이동합니다.
+- 0.0~2.2s : Scene 1 → Milky Way 긴 crossfade
+- 2.2~5.2s : Milky Way 시작 구도 유지
+- 5.2~8.5s : Milky Way target Zoom In
+- 6.7~8.5s : Closeup galaxy crossfade
+- 8.5~10.0s : Closeup galaxy hold
+- 10.0~11.1s : Closeup → Cluster match dissolve
+- 10.0~13.8s : Cluster 중앙 이동 + Zoom Out 동시 진행
+- 13.8~15.8s : Scene 3 도착 화면 hold
 
-## 주요 시간
-Scene 2/3 타임라인은 Scene 2 시작 = 0초 기준:
-
-- 0.0~0.9s : Scene 1 → Milky Way Crossfade
-- 0.9~3.9s : Milky Way 전체 유지
-- 3.9~7.0s : Milky Way Zoom In
-- 5.2~7.0s : Closeup galaxy Crossfade
-- 7.0~8.4s : Closeup galaxy 유지
-- 8.4~9.4s : Closeup → Cluster target Match Dissolve
-- 9.0~12.6s : Cluster target → 전체 은하단 Zoom Out
-- 12.6~14.6s : Scene 3 도착 화면 유지
-
-## 새 에셋
-- `assets/scene02-milkyway/milkyway-bg.png`
-- `assets/scene02-milkyway/galaxy-closeup-transition.png`
-- `assets/scene03-galaxy-cluster/galaxy-cluster-bg.png`
-
-## GitHub 반영
-ZIP 전체를 저장소 루트에 덮어쓰기 하는 것을 권장합니다.
-
-주요 파일:
+## 핵심 변경 파일
 - `index.html`
-- `css/common.css`
-- `js/mobile-scene23-v6.js`
-- 위 Scene 2/3 asset 3개
+- `js/mobile-scene23-v7.js`
+- `README.md`
+
