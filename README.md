@@ -1,63 +1,56 @@
-# Scene 1 v5 — 점화 우주선 부드러운 곡선 이동
+# Scene 2 + Scene 3 시작부 v6
 
-## 이번 수정사항
+이번 버전은 기존 Scene 1 v5 뒤에 다음 장면을 연결합니다.
 
-1. 점화 우주선 등장 위치
-- `(70, 77)`로 변경
+## Scene 2
+1. Scene 1 마지막 전체 화면에서 은하수 이미지로 약 0.9초 Crossfade
+2. 은하수 전체 화면 약 3초 유지
+3. 밝은 밀집 영역을 향해 부드럽게 Zoom In
+4. 확대 과정에서 `galaxy-closeup-transition.png`로 Crossfade
+5. 확대된 은하를 잠시 유지
 
-2. 최종 좌표
-- `(20, 10)`으로 변경
-- 최종적으로 아주 작은 점처럼 보이도록 축소
+## Scene 2 → Scene 3
+사용자가 노란 원으로 지정한 은하를 Scene 3의 기준점으로 사용합니다.
 
-3. 우주선 이동 방식 개선
-기존:
-- 여러 경유점을 구간별로 따로 보간
-- 구간별 easing이 반복되어 몇 칸씩 이동하는 것처럼 보일 수 있었음
-- 매 프레임 left/top을 변경
+- 원본 `galaxy-cluster-bg.png` 기준 타깃 좌표:
+  - x ≈ 64.03
+  - y ≈ 31.92
 
-v5:
-- Catmull-Rom spline으로 모든 경유점을 하나의 연속 곡선으로 연결
-- 경로를 미리 촘촘하게 샘플링하고 arc-length lookup 사용
-- 비행 전체에 하나의 연속 가속 곡선만 적용
-- 기준 left/top은 `(70,77)`에 고정
-- 실제 이동은 `translate3d()`만 사용하여 모바일 GPU 합성을 유도
-- 회전은 곡선의 실제 진행 방향(tangent)을 기준으로 자동 계산
-- 크기 축소도 전체 진행도에 따라 연속적으로 계산
+이 값은 사용자가 표시한 900×1601 주석 이미지에서
+노란 표시의 중심을 계산하여 원본 941×1672 이미지 좌표로 환산한 값입니다.
 
-4. 마지막 전체 화면 시간
-- 기존 2초에서 1초 추가
-- 우주선이 최종 `(20,10)`에 도달한 뒤 약 3초간 전체 화면 유지
-- Scene 종료: 약 `16.85초`
+전환:
+1. closeup galaxy가 회전·축소
+2. 같은 화면 중앙에 Scene 3 타깃 은하가 나타나도록 Crossfade
+3. `galaxy-cluster-bg.png`는 타깃을 중심으로 약 14배 확대된 상태에서 시작
+4. 약 3.6초 동안 빠르게 Zoom Out
+5. 최종적으로 은하단 전체 화면에 도착
+6. 약 2초간 Scene 3 도착 화면 유지
+
+현재 개발 단계에서는 그 뒤 임시로 Scene 14 입력 화면으로 이동합니다.
 
 ## 주요 시간
-- 기본 우주선 등장: 7.30s
-- 점화 우주선 등장: 8.90s
-- 점화 상태 정지: 8.90~9.90s
-- 이동 시작: 9.90s
-- 원거리 점 도달: 13.85s
-- 전체 장면 유지: 13.85~16.85s
-- Scene 종료: 16.85s
+Scene 2/3 타임라인은 Scene 2 시작 = 0초 기준:
 
-## 점화 우주선 경유점
-부드러운 곡선 생성용 경유점:
-- `(70,77)`
-- `(71,71)`
-- `(70,63)`
-- `(66,54)`
-- `(58,44)`
-- `(48,34)`
-- `(38,25)`
-- `(28,17)`
-- `(20,10)`
+- 0.0~0.9s : Scene 1 → Milky Way Crossfade
+- 0.9~3.9s : Milky Way 전체 유지
+- 3.9~7.0s : Milky Way Zoom In
+- 5.2~7.0s : Closeup galaxy Crossfade
+- 7.0~8.4s : Closeup galaxy 유지
+- 8.4~9.4s : Closeup → Cluster target Match Dissolve
+- 9.0~12.6s : Cluster target → 전체 은하단 Zoom Out
+- 12.6~14.6s : Scene 3 도착 화면 유지
 
-경유점은 곡선을 정의할 뿐, 각 점에서 멈추거나 다시 가속하지 않습니다.
+## 새 에셋
+- `assets/scene02-milkyway/milkyway-bg.png`
+- `assets/scene02-milkyway/galaxy-closeup-transition.png`
+- `assets/scene03-galaxy-cluster/galaxy-cluster-bg.png`
 
 ## GitHub 반영
-가장 안전하게 ZIP 전체를 저장소 루트에 덮어쓰기 하세요.
+ZIP 전체를 저장소 루트에 덮어쓰기 하는 것을 권장합니다.
 
-핵심 변경 파일:
+주요 파일:
 - `index.html`
-- `js/mobile-world-timeline-v5.js`
-- `README.md`
-
-기존 v4의 지구본/배경/기타 에셋은 그대로 포함되어 있습니다.
+- `css/common.css`
+- `js/mobile-scene23-v6.js`
+- 위 Scene 2/3 asset 3개

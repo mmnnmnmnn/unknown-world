@@ -392,3 +392,60 @@ button { -webkit-tap-highlight-color: transparent; }
     animation: none !important;
   }
 }
+
+
+/* -------------------------------------------------------
+   Scene 2 → Scene 3 시작부
+------------------------------------------------------- */
+.scene23-screen {
+  position: fixed;
+  z-index: 40;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: #02050a;
+  opacity: 1;
+}
+
+.scene23-viewport {
+  position: relative;
+  overflow: hidden;
+  width: min(100vw, calc(100dvh * var(--scene-ratio)));
+  height: min(100dvh, calc(100vw / var(--scene-ratio)));
+  max-width: 100vw;
+  max-height: 100dvh;
+  background: #02050a;
+  isolation: isolate;
+}
+
+.scene23-layer {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform-origin: 0 0;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+.scene23-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+  pointer-events: none;
+}
+
+@media (min-width: 760px) {
+  .scene23-screen {
+    background: #03070c;
+  }
+
+  .scene23-viewport {
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.05),
+      0 30px 90px rgba(0, 0, 0, 0.5);
+  }
+}
