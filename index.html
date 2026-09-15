@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="color-scheme" content="dark" />
   <title>데이터 너머, 미지의 세계</title>
-  <link rel="stylesheet" href="./css/common.css?v=scene23-v13" />
+  <link rel="stylesheet" href="./css/common.css?v=scene4-v14" />
 </head>
 <body class="mobile-page">
   <main id="mobileApp" class="mobile-app">
@@ -105,7 +105,67 @@
           보이지 않는 우주,
         </div>
 
-        <div id="scene23DebugBadge" class="scene-debug-badge">SCENE 2 → 3 · v13</div>
+        <div id="scene23DebugBadge" class="scene-debug-badge">SCENE 2 → 3 · v14</div>
+      </div>
+    </section>
+
+
+    <!-- Scene 4 — 닿을 수 없는 심해 -->
+    <section id="scene4Screen" class="app-screen scene4-screen" hidden aria-label="닿을 수 없는 심해 애니메이션">
+      <div id="scene4Viewport" class="scene4-viewport">
+
+        <div id="scene4Camera" class="scene4-camera">
+          <img
+            id="deepseaBg"
+            class="scene4-bg"
+            src="./assets/scene04-deepsea/deepsea-bg.png"
+            alt=""
+            draggable="false"
+          />
+        </div>
+
+        <div id="scene4Vignette" class="scene4-vignette" aria-hidden="true"></div>
+
+        <img
+          id="fishSchoolA"
+          class="scene4-creature scene4-fish"
+          src="./assets/scene04-deepsea/fish-school.png"
+          alt=""
+          draggable="false"
+        />
+
+        <img
+          id="fishSchoolB"
+          class="scene4-creature scene4-fish"
+          src="./assets/scene04-deepsea/fish-school.png"
+          alt=""
+          draggable="false"
+        />
+
+        <img
+          id="scene4Whale"
+          class="scene4-creature scene4-whale"
+          src="./assets/shared/whale.png"
+          alt=""
+          draggable="false"
+        />
+
+        <img
+          id="scene4Squid"
+          class="scene4-creature scene4-squid"
+          src="./assets/scene04-deepsea/giant-squid.png"
+          alt=""
+          draggable="false"
+        />
+
+        <!-- Scene 3 → 4 사이의 약 1.4초 암흑 통로 -->
+        <div id="scene4Corridor" class="scene4-corridor" aria-hidden="true"></div>
+
+        <div id="scene4Title" class="scene4-title" aria-hidden="true">
+          닿을 수 없는 심해,
+        </div>
+
+        <div class="scene-debug-badge">SCENE 4 · v14</div>
       </div>
     </section>
 
@@ -148,6 +208,6 @@
 
   </main>
 
-  <script type="module" src="./js/mobile-scene23-v13.js"></script>
+  <script type="module" src="./js/mobile-scene4-v14.js"></script>
 </body>
 </html>
