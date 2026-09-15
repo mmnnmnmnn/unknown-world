@@ -449,3 +449,24 @@ button { -webkit-tap-highlight-color: transparent; }
       0 30px 90px rgba(0, 0, 0, 0.5);
   }
 }
+
+
+.scene3-end-title {
+  position: absolute;
+  z-index: 12;
+  left: 50%;
+  bottom: 14%;
+  transform: translateX(-50%);
+  width: min(88%, 520px);
+  text-align: center;
+  color: rgba(248, 243, 232, 0.96);
+  font-size: clamp(28px, 7vw, 42px);
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  text-shadow:
+    0 2px 18px rgba(0, 0, 0, 0.55),
+    0 0 20px rgba(255, 255, 255, 0.08);
+  opacity: 0;
+  will-change: opacity, transform;
+  pointer-events: none;
+}
