@@ -1,6 +1,6 @@
 @font-face {
-  font-family: "ACCChildrenFall";
-  src: url("../assets/fonts/acc-children-fall.ttf") format("truetype");
+  font-family: "BMYeonsung";
+  src: url("../assets/fonts/BMYEONSUNG.ttf") format("truetype");
   font-display: swap;
 }
 
@@ -8,7 +8,7 @@
 * { box-sizing: border-box; }
 
 :root {
-  font-family: "ACCChildrenFall", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "BMYeonsung", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #f8f3e8;
   background: #07101b;
   --scene-ratio: 0.5625;
