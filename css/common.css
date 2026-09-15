@@ -1,3 +1,9 @@
+
+/* HTML hidden 속성이 .screen의 display:grid에 덮어쓰이지 않도록 강제합니다. */
+[hidden] {
+  display: none !important;
+}
+
 * {
   box-sizing: border-box;
 }
