@@ -1,24 +1,35 @@
-# Scene 2 + Scene 3 마무리 v11
+# Scene 1 → Scene 3 완성본 v13
 
-이번 버전 변경사항:
+이번 버전은 v12에서 **"보이지 않는 우주," 텍스트가 완전히 나타난 뒤 유지 시간을 1.5초 더 늘린 버전**입니다.
 
-## 1. Scene 3 텍스트 위치 변경
-- `"보이지 않는 우주,"` 텍스트를 하단 영역에서
-  **화면 중앙**으로 이동
-- 기존: `bottom: 14%`
-- 변경: `left: 50%`, `top: 50%`, `translate(-50%, -50%)`
-- 기존과 동일하게 살짝 아래에서 올라오며 페이드인
+## 변경 사항
+- 기존 유지 시간: **1.9초**
+- 변경 유지 시간: **3.4초**
+- 증가분: **+1.5초**
 
-## 2. 기본 글꼴 변경
-- 기존: BM YEONSUNG
-- 변경: **MaruBuri Bold**
-- 파일: `assets/fonts/MaruBuri-Bold.ttf`
-- 전체 기본 UI 텍스트와 Scene 3 타이틀에 적용
-- 디버그 배지는 가독성을 위해 system font 유지
+## 기준 시각
+- 텍스트 등장 시작: `16.60s`
+- 텍스트 완전 표시: `17.35s`
+- Scene 4 직전 장면 종료: `20.75s`
+
+즉,
+- 등장 애니메이션 포함 전체 노출 시간: **4.15초**
+- 완전히 나타난 뒤 유지 시간: **3.4초**
+
+## 전체 타임라인
+- `0.0 ~ 2.2s` : Scene 1 → Scene 2 blur/crossfade
+- `2.2 ~ 5.2s` : Milky Way 시작 구도 유지
+- `5.2 ~ 8.2s` : `(45,55)` 방향 Zoom In
+- `6.7 ~ 8.2s` : Milky Way → closeup 1.5초 blur/crossfade
+- `8.2 ~ 9.7s` : closeup galaxy 유지
+- `9.7 ~ 10.45s` : closeup 0.75초 회전
+- `10.45 ~ 12.45s` : 회전 정지 상태로 fade out
+- `12.45 ~ 16.25s` : galaxy cluster Zoom Out
+- `12.95 ~ 16.25s` : 중앙 이동
+- `16.60 ~ 17.35s` : `"보이지 않는 우주,"` 등장
+- `17.35 ~ 20.75s` : Scene 4 직전 장면 유지
 
 ## 변경 파일
 - `index.html`
-- `css/common.css`
-- `js/mobile-scene23-v11.js`
-- `assets/fonts/MaruBuri-Bold.ttf`
+- `js/mobile-scene23-v13.js`
 - `README.md`
