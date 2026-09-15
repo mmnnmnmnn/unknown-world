@@ -7,13 +7,9 @@
   font-display: swap;
 }
 
-[hidden] {
-  display: none !important;
-}
+[hidden] { display: none !important; }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 :root {
   font-family: "ACCChildrenFall", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -30,26 +26,15 @@ body {
   background: #07101b;
 }
 
-body {
-  min-height: 100dvh;
-}
+body { min-height: 100dvh; }
 
 button,
-input {
-  font: inherit;
-}
+input { font: inherit; }
 
-button {
-  -webkit-tap-highlight-color: transparent;
-}
+button { -webkit-tap-highlight-color: transparent; }
 
-.mobile-app {
-  min-height: 100dvh;
-}
-
-.app-screen {
-  min-height: 100dvh;
-}
+.mobile-app,
+.app-screen { min-height: 100dvh; }
 
 /* -------------------------------------------------------
    시작 화면
@@ -112,9 +97,7 @@ button {
   transition: transform 160ms ease, background 160ms ease, opacity 160ms ease;
 }
 
-.enter-button:active {
-  transform: scale(0.97);
-}
+.enter-button:active { transform: scale(0.97); }
 
 .enter-button.is-loading {
   opacity: 0.72;
@@ -140,7 +123,7 @@ button {
 }
 
 /* -------------------------------------------------------
-   Scene viewport
+   Scene 1 : 고정 WORLD + 독립 CAMERA
 ------------------------------------------------------- */
 .scene-screen {
   position: relative;
@@ -162,10 +145,14 @@ button {
   transform: translateZ(0);
 }
 
+/*
+  sceneCamera만 움직입니다.
+  sceneWorld와 background 자체에는 독립 drift/zoom을 주지 않습니다.
+*/
 .scene-camera {
   position: absolute;
   inset: 0;
-  transform-origin: 50% 84%;
+  transform-origin: 0 0;
   will-change: transform;
 }
 
@@ -173,18 +160,20 @@ button {
   position: absolute;
   inset: 0;
   overflow: visible;
+  perspective: 1100px;
 }
 
-.background-drift {
-  position: absolute;
-  inset: -7%;
-  will-change: transform;
-}
-
+/*
+  WORLD의 0~100 좌표와 화면을 1:1로 대응시키기 위해
+  배경은 sceneWorld를 정확히 채웁니다.
+*/
 .scene-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: fill;
   user-select: none;
   pointer-events: none;
 }
@@ -195,7 +184,17 @@ button {
   z-index: 4;
   user-select: none;
   pointer-events: none;
-  will-change: transform, opacity;
+  will-change: left, top, transform, opacity;
+}
+
+.world-center {
+  transform: translate(-50%, -50%);
+  transform-origin: 50% 50%;
+}
+
+.world-foot {
+  transform: translate(-50%, -100%);
+  transform-origin: 50% 100%;
 }
 
 .decorative {
@@ -203,81 +202,26 @@ button {
   opacity: 0;
 }
 
-/* 상단/중단 콜라주 배치 */
-.lady-on-star {
-  top: 3.8%;
-  left: 10%;
-  width: 39%;
-}
-
-.deity-figure {
-  top: 4.8%;
-  right: 4.6%;
-  width: 33%;
-}
-
-.moth-top {
-  top: 15%;
-  left: 0.8%;
-  width: 13%;
-  transform: rotate(-18deg);
-}
-
-.planet-jupiter {
-  top: 32%;
-  left: 46%;
-  width: 17%;
-}
-
-.planet-green {
-  top: 36%;
-  right: 8%;
-  width: 24%;
-}
-
-.saturn {
-  top: 47%;
-  left: 4.5%;
-  width: 41%;
-}
-
-.moth-lower {
-  top: 58%;
-  right: 7%;
-  width: 11%;
-  transform: rotate(18deg);
-}
-
 .globe {
   z-index: 2;
-  left: -20%;
-  bottom: -8%;
-  width: 144%;
   opacity: 0;
 }
 
 .observer {
   z-index: 6;
-  left: 17.5%;
-  bottom: 15%;
-  width: 26%;
   opacity: 0;
-  transform-origin: 50% 100%;
 }
 
 .rocket-group {
   z-index: 8;
-  right: 16%;
-  bottom: 12%;
-  width: 21%;
+  opacity: 1;
   aspect-ratio: 1113 / 1413;
-  opacity: 0;
-  transform-origin: 50% 68%;
 }
 
 .rocket-image {
   position: absolute;
-  inset: 0;
+  left: 0;
+  top: 0;
   width: 100%;
   height: 100%;
   object-fit: contain;
@@ -287,37 +231,21 @@ button {
 
 .rocket-idle {
   z-index: 3;
-  opacity: 1;
+  opacity: 0;
 }
 
+/* 점화 우주선만 1.5배 + 기본 우주선보다 약간 아래 */
 .rocket-launch {
   z-index: 4;
+  top: 8%;
   opacity: 0;
-  transform: translateY(8%) scale(1.5);
-  transform-origin: 50% 62%;
+  transform: scale(1.5);
+  transform-origin: 50% 50%;
 }
 
 .launch-cloud {
   z-index: 7;
   opacity: 0;
-}
-
-.cloud-left {
-  left: 26%;
-  bottom: 4%;
-  width: 50%;
-}
-
-.cloud-right {
-  right: 7%;
-  bottom: 5%;
-  width: 46%;
-}
-
-.cloud-small {
-  left: 45%;
-  bottom: 14%;
-  width: 23%;
 }
 
 .scene-loading {
@@ -373,9 +301,7 @@ button {
     #07101b;
 }
 
-.form-shell {
-  width: min(100%, 480px);
-}
+.form-shell { width: min(100%, 480px); }
 
 .form-kicker {
   margin: 0 0 8px;
@@ -524,12 +450,10 @@ button {
   overflow-wrap: anywhere;
 }
 
-.replay-button {
-  width: 100%;
-}
+.replay-button { width: 100%; }
 
 /* -------------------------------------------------------
-   Animations
+   공통 애니메이션
 ------------------------------------------------------- */
 @keyframes loadingPulse {
   0%, 100% { opacity: 0.55; transform: scale(0.92); }
@@ -553,12 +477,12 @@ button {
 
 @media (min-width: 760px) {
   .scene-screen,
-  .start-screen {
-    background: #03070c;
-  }
+  .start-screen { background: #03070c; }
 
   .scene-viewport {
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05), 0 30px 90px rgba(0, 0, 0, 0.5);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.05),
+      0 30px 90px rgba(0, 0, 0, 0.5);
   }
 }
 

@@ -12,13 +12,19 @@ import {
   isFirebaseConfigured
 } from "./firebase-config.js";
 
-/* -------------------------------------------------------
-   기본 상태
-------------------------------------------------------- */
+/* =======================================================
+   Scene 1 설계 원칙
+   -------------------------------------------------------
+   1) star-chart-bg가 고정 WORLD 좌표계입니다.
+   2) 모든 오브젝트 위치/경로는 WORLD의 0~100 좌표로 관리합니다.
+   3) 각 요소 시간은 Scene 시작(0 ms) 기준 절대 시간입니다.
+   4) 요소 타임라인은 서로 독립적입니다.
+   5) CAMERA는 WORLD를 바라보는 시점만 제어합니다.
+======================================================= */
+
 const STORAGE_KEY = "unknown-world-submission-complete";
 const LAST_RESPONSE_KEY = "unknown-world-last-response";
 
-const SCENE1_DURATION = 24000;
 const SCENE1_ASSETS = [
   "./assets/scene01-space/star-chart-bg.png",
   "./assets/scene01-space/globe.png",
@@ -36,6 +42,127 @@ const SCENE1_ASSETS = [
   "./assets/scene01-space/saturn.png"
 ];
 
+/* -------------------------------------------------------
+   1. WORLD LAYOUT
+   x/y = 배경 기준 0~100 좌표
+   width = 배경 너비 대비 %
+------------------------------------------------------- */
+const WORLD_LAYOUT = {
+  globe:       { x: 50.0, y: 80.5, width: 144 },
+  observer:    { x: 28.0, y: 86.0, width: 26 },
+
+  // 기본 우주선은 이전 버전보다 약간 왼쪽
+  rocket:      { x: 73.0, y: 79.0, width: 21 },
+
+  // 구름은 우주선을 중심으로 좌우에 배치
+  cloudLeft:   { x: 60.0, y: 86.5, width: 50 },
+  cloudRight:  { x: 84.0, y: 86.0, width: 46 },
+  cloudSmall:  { x: 69.0, y: 83.5, width: 23 },
+
+  // 줌아웃 시 드러나는 오브젝트
+  ladyOnStar:  { x: 29.0, y: 18.0, width: 39 },
+  deityFigure: { x: 79.0, y: 16.0, width: 33 },
+  mothTop:     { x: 7.5,  y: 19.0, width: 13 },
+  jupiter:     { x: 54.5, y: 37.0, width: 17 },
+  planetGreen: { x: 80.0, y: 43.0, width: 24 },
+  saturn:      { x: 25.0, y: 54.0, width: 41 },
+  mothLower:   { x: 88.0, y: 50.0, width: 11 }
+};
+
+/* -------------------------------------------------------
+   2. ELEMENT TIMELINE
+   모든 값은 Scene 시작 기준 ms
+   다른 요소 시간을 참조하지 않습니다.
+------------------------------------------------------- */
+const ELEMENT_TIMELINE = {
+  globe: {
+    appear: 800,
+    settle: 1800
+  },
+
+  observer: {
+    appear: 2000,
+    upright: 4200
+  },
+
+  rocket: {
+    appear: 5500,
+    appearEnd: 5850,
+    ignite: 7000,
+
+    // 점화 순간부터만 이동
+    slowEnd: 9000,
+    accelerate: 9000,
+    exit: 10650
+  },
+
+  clouds: {
+    sideStart: 7400,
+    sideEnd: 9500,
+    smallStart: 7600,
+    smallEnd: 10100
+  },
+
+  upperObjects: {
+    create: 7600,
+    ready: 8300
+  }
+};
+
+/* -------------------------------------------------------
+   3. CAMERA TIMELINE
+   CAMERA도 Scene 시작 기준 절대 시간
+------------------------------------------------------- */
+const CAMERA_TIMELINE = {
+  start:       { time: 0,     x: 50, y: 50, zoom: 1.00 },
+
+  // 관측자가 나타날 때 관측자 쪽을 확실히 봅니다.
+  observerIn:  { time: 1600,  x: 30, y: 75, zoom: 1.00 },
+  observerShot:{ time: 2450,  x: 30, y: 75, zoom: 2.35 },
+
+  // 관측자가 서 있는 모습을 충분히 본 뒤 우주선으로 이동
+  observerHold:{ time: 4900,  x: 30, y: 75, zoom: 2.35 },
+  rocketPan:   { time: 6100,  x: 73, y: 75, zoom: 2.35 },
+  rocketHold:  { time: 8700,  x: 73, y: 75, zoom: 2.35 },
+
+  // 점화/구름을 보여준 뒤 전체로 줌아웃
+  zoomOutEnd:  { time: 10800, x: 50, y: 50, zoom: 1.00 },
+  wideHold:    { time: 12500, x: 50, y: 50, zoom: 1.00 }
+};
+
+/*
+  점화 우주선 경로.
+  x/y는 WORLD 좌표입니다.
+
+  7.0~9.0초: 우측 영역에서 천천히 상승
+  9.0초 이후: 파란 동선 의도처럼 왼쪽 위로 가속
+  이전 버전처럼 화면 정중앙을 과도하게 관통하지 않도록
+  초반 경로를 우측에 유지합니다.
+*/
+const ROCKET_PATH = [
+  { time: 7000,  x: 73.0, y: 79.0, rotate: 0 },
+  { time: 8000,  x: 74.0, y: 73.0, rotate: -4 },
+  { time: 9000,  x: 73.0, y: 65.0, rotate: -10 },
+
+  // 가속 시작
+  { time: 9350,  x: 69.0, y: 57.5, rotate: -17 },
+  { time: 9700,  x: 62.0, y: 50.5, rotate: -25 },
+  { time: 10050, x: 51.0, y: 43.5, rotate: -34 },
+  { time: 10350, x: 34.0, y: 37.5, rotate: -45 },
+  { time: 10650, x: -12.0, y: 32.0, rotate: -58 }
+];
+
+/* Scene 총 길이는 고정 상수가 아니라 마지막 이벤트로부터 계산 */
+const SCENE1_END = Math.max(
+  CAMERA_TIMELINE.wideHold.time,
+  ELEMENT_TIMELINE.rocket.exit,
+  ELEMENT_TIMELINE.clouds.smallEnd,
+  ELEMENT_TIMELINE.upperObjects.ready
+);
+
+/* -------------------------------------------------------
+   DOM
+------------------------------------------------------- */
 const startScreen = document.querySelector("#startScreen");
 const scene1Screen = document.querySelector("#scene1Screen");
 const scene14Screen = document.querySelector("#scene14Screen");
@@ -45,29 +172,37 @@ const loadStatus = document.querySelector("#loadStatus");
 const revisitNotice = document.querySelector("#revisitNotice");
 const sceneLoading = document.querySelector("#sceneLoading");
 
+const sceneViewport = document.querySelector("#sceneViewport");
 const sceneCamera = document.querySelector("#sceneCamera");
-const backgroundDrift = document.querySelector("#backgroundDrift");
+
 const globe = document.querySelector("#globe");
 const observer = document.querySelector("#observer");
+
 const rocketGroup = document.querySelector("#rocketGroup");
 const rocketIdle = document.querySelector("#rocketIdle");
 const rocketLaunch = document.querySelector("#rocketLaunch");
+
 const cloudLeft = document.querySelector("#cloudLeft");
 const cloudRight = document.querySelector("#cloudRight");
 const cloudSmall = document.querySelector("#cloudSmall");
 
-const decorativeElements = [
-  document.querySelector("#mothTop"),
-  document.querySelector("#ladyOnStar"),
-  document.querySelector("#deityFigure"),
-  document.querySelector("#jupiter"),
-  document.querySelector("#planetGreen"),
-  document.querySelector("#saturn"),
-  document.querySelector("#mothLower")
-];
-
+const mothTop = document.querySelector("#mothTop");
 const ladyOnStar = document.querySelector("#ladyOnStar");
 const deityFigure = document.querySelector("#deityFigure");
+const jupiter = document.querySelector("#jupiter");
+const planetGreen = document.querySelector("#planetGreen");
+const saturn = document.querySelector("#saturn");
+const mothLower = document.querySelector("#mothLower");
+
+const decorativeElements = [
+  mothTop,
+  ladyOnStar,
+  deityFigure,
+  jupiter,
+  planetGreen,
+  saturn,
+  mothLower
+];
 
 const form = document.querySelector("#responseForm");
 const nicknameInput = document.querySelector("#nickname");
@@ -184,7 +319,34 @@ function renderSubmissionSummary() {
 }
 
 /* -------------------------------------------------------
-   Scene 1 에셋 로딩
+   WORLD layout 적용
+------------------------------------------------------- */
+function applyWorldPosition(element, config) {
+  element.style.left = `${config.x}%`;
+  element.style.top = `${config.y}%`;
+  element.style.width = `${config.width}%`;
+}
+
+function applyWorldLayout() {
+  applyWorldPosition(globe, WORLD_LAYOUT.globe);
+  applyWorldPosition(observer, WORLD_LAYOUT.observer);
+  applyWorldPosition(rocketGroup, WORLD_LAYOUT.rocket);
+
+  applyWorldPosition(cloudLeft, WORLD_LAYOUT.cloudLeft);
+  applyWorldPosition(cloudRight, WORLD_LAYOUT.cloudRight);
+  applyWorldPosition(cloudSmall, WORLD_LAYOUT.cloudSmall);
+
+  applyWorldPosition(ladyOnStar, WORLD_LAYOUT.ladyOnStar);
+  applyWorldPosition(deityFigure, WORLD_LAYOUT.deityFigure);
+  applyWorldPosition(mothTop, WORLD_LAYOUT.mothTop);
+  applyWorldPosition(jupiter, WORLD_LAYOUT.jupiter);
+  applyWorldPosition(planetGreen, WORLD_LAYOUT.planetGreen);
+  applyWorldPosition(saturn, WORLD_LAYOUT.saturn);
+  applyWorldPosition(mothLower, WORLD_LAYOUT.mothLower);
+}
+
+/* -------------------------------------------------------
+   에셋 로딩
 ------------------------------------------------------- */
 function preloadImage(src) {
   return new Promise((resolve) => {
@@ -232,11 +394,12 @@ function preloadScene1(force = false) {
 }
 
 /* -------------------------------------------------------
-   WAAPI helper
+   Animation helper
 ------------------------------------------------------- */
-function createAnimation(element, keyframes, options) {
+function createAnimation(element, keyframes, options = {}) {
   const animation = element.animate(keyframes, {
     fill: "both",
+    easing: "linear",
     ...options
   });
 
@@ -259,15 +422,370 @@ function cancelScene1() {
 
 function resetScene1Elements() {
   sceneCamera.style.transform = "";
-  backgroundDrift.style.transform = "";
+
+  globe.style.opacity = "";
+  observer.style.opacity = "";
+  rocketIdle.style.opacity = "";
+  rocketLaunch.style.opacity = "";
+
+  cloudLeft.style.opacity = "";
+  cloudRight.style.opacity = "";
+  cloudSmall.style.opacity = "";
+
+  decorativeElements.forEach((element) => {
+    element.style.opacity = "";
+  });
+
+  applyWorldLayout();
 }
 
 /* -------------------------------------------------------
-   Scene 1 타임라인
+   CAMERA
+   WORLD 좌표 (x,y)를 화면 중심으로 가져오는 matrix 계산
+------------------------------------------------------- */
+function cameraMatrix(targetX, targetY, zoom) {
+  const width = sceneViewport.clientWidth;
+  const height = sceneViewport.clientHeight;
+
+  const targetPxX = (targetX / 100) * width;
+  const targetPxY = (targetY / 100) * height;
+
+  const tx = width / 2 - targetPxX * zoom;
+  const ty = height / 2 - targetPxY * zoom;
+
+  return `matrix(${zoom}, 0, 0, ${zoom}, ${tx}, ${ty})`;
+}
+
+function buildCameraAnimation() {
+  const shots = [
+    { ...CAMERA_TIMELINE.start,        easing: "ease-in-out" },
+    { ...CAMERA_TIMELINE.observerIn,   easing: "cubic-bezier(.22,.72,.27,1)" },
+    { ...CAMERA_TIMELINE.observerShot, easing: "linear" },
+    { ...CAMERA_TIMELINE.observerHold, easing: "cubic-bezier(.42,0,.2,1)" },
+    { ...CAMERA_TIMELINE.rocketPan,    easing: "linear" },
+    { ...CAMERA_TIMELINE.rocketHold,   easing: "cubic-bezier(.22,.72,.27,1)" },
+    { ...CAMERA_TIMELINE.zoomOutEnd,   easing: "linear" },
+    { ...CAMERA_TIMELINE.wideHold,     easing: "linear" }
+  ];
+
+  const duration = CAMERA_TIMELINE.wideHold.time;
+
+  const keyframes = shots.map((shot) => ({
+    offset: shot.time / duration,
+    transform: cameraMatrix(shot.x, shot.y, shot.zoom),
+    easing: shot.easing
+  }));
+
+  return createAnimation(sceneCamera, keyframes, {
+    duration,
+    easing: "linear"
+  });
+}
+
+/* -------------------------------------------------------
+   ELEMENT animations
+------------------------------------------------------- */
+function animateGlobe() {
+  const { appear, settle } = ELEMENT_TIMELINE.globe;
+
+  createAnimation(
+    globe,
+    [
+      {
+        opacity: 0,
+        transform: "translate(-50%, -50%) translateY(9%) scale(.96)"
+      },
+      {
+        opacity: 1,
+        transform: "translate(-50%, -50%) translateY(0) scale(1)"
+      }
+    ],
+    {
+      delay: appear,
+      duration: settle - appear,
+      easing: "cubic-bezier(.2,.8,.25,1)"
+    }
+  );
+}
+
+function animateObserver() {
+  const { appear, upright } = ELEMENT_TIMELINE.observer;
+
+  createAnimation(
+    observer,
+    [
+      {
+        opacity: 0,
+        transform:
+          "translate(-50%, -100%) perspective(900px) rotateX(86deg) translateY(10%) scale(.76)"
+      },
+      {
+        opacity: 1,
+        transform:
+          "translate(-50%, -100%) perspective(900px) rotateX(68deg) translateY(7%) scale(.82)",
+        offset: 0.18
+      },
+      {
+        opacity: 1,
+        transform:
+          "translate(-50%, -100%) perspective(900px) rotateX(30deg) translateY(3%) scale(.94)",
+        offset: 0.58
+      },
+      {
+        opacity: 1,
+        transform:
+          "translate(-50%, -100%) perspective(900px) rotateX(0deg) translateY(0) scale(1)"
+      }
+    ],
+    {
+      delay: appear,
+      duration: upright - appear,
+      easing: "cubic-bezier(.16,.82,.24,1)"
+    }
+  );
+}
+
+function animateRocketIdle() {
+  const start = ELEMENT_TIMELINE.rocket.appear;
+  const fadeEnd = ELEMENT_TIMELINE.rocket.appearEnd;
+  const ignite = ELEMENT_TIMELINE.rocket.ignite;
+  const duration = ignite - start;
+
+  const fadeOffset = (fadeEnd - start) / duration;
+  const cutOffset = Math.max(fadeOffset, 0.998);
+
+  createAnimation(
+    rocketIdle,
+    [
+      { opacity: 0, offset: 0 },
+      { opacity: 1, offset: fadeOffset, easing: "ease-out" },
+      { opacity: 1, offset: cutOffset },
+      { opacity: 0, offset: 1 }
+    ],
+    {
+      delay: start,
+      duration,
+      easing: "linear"
+    }
+  );
+}
+
+function animateRocketLaunchSwitch() {
+  createAnimation(
+    rocketLaunch,
+    [
+      { opacity: 0 },
+      { opacity: 1 }
+    ],
+    {
+      delay: ELEMENT_TIMELINE.rocket.ignite,
+      duration: 1,
+      easing: "steps(1, end)"
+    }
+  );
+}
+
+function animateRocketPath() {
+  const start = ROCKET_PATH[0].time;
+  const end = ROCKET_PATH[ROCKET_PATH.length - 1].time;
+  const duration = end - start;
+
+  const keyframes = ROCKET_PATH.map((point, index) => {
+    const isSlowSection = point.time < ELEMENT_TIMELINE.rocket.accelerate;
+
+    return {
+      offset: (point.time - start) / duration,
+      left: `${point.x}%`,
+      top: `${point.y}%`,
+      transform: `translate(-50%, -50%) rotate(${point.rotate}deg)`,
+      easing: isSlowSection
+        ? "cubic-bezier(.32,.08,.42,1)"
+        : "cubic-bezier(.42,0,1,1)"
+    };
+  });
+
+  createAnimation(
+    rocketGroup,
+    keyframes,
+    {
+      delay: start,
+      duration,
+      easing: "linear"
+    }
+  );
+}
+
+function animateCloud(
+  element,
+  {
+    start,
+    end,
+    fromX = 0,
+    fromY = 0,
+    toX = 0,
+    toY = 0,
+    startScale = 0.38,
+    endScale = 1,
+    peakOpacity = 1
+  }
+) {
+  createAnimation(
+    element,
+    [
+      {
+        opacity: 0,
+        transform:
+          `translate(-50%, -50%) translate(${fromX}%, ${fromY}%) scale(${startScale})`
+      },
+      {
+        opacity: peakOpacity,
+        transform:
+          `translate(-50%, -50%) translate(${toX}%, ${toY}%) scale(${endScale})`
+      }
+    ],
+    {
+      delay: start,
+      duration: end - start,
+      easing: "cubic-bezier(.16,.72,.28,1)"
+    }
+  );
+}
+
+function animateClouds() {
+  /*
+    중요:
+    점화 = 7000 ms
+    좌/우 구름 = 7400 ms
+    작은 구름 = 7600 ms
+
+    따라서 점화 이전에는 구름 애니메이션 자체가 시작되지 않습니다.
+  */
+  animateCloud(cloudLeft, {
+    start: ELEMENT_TIMELINE.clouds.sideStart,
+    end: ELEMENT_TIMELINE.clouds.sideEnd,
+    fromX: 18,
+    fromY: 8,
+    toX: -8,
+    toY: 0,
+    startScale: 0.35,
+    endScale: 1.02,
+    peakOpacity: 1
+  });
+
+  animateCloud(cloudRight, {
+    start: ELEMENT_TIMELINE.clouds.sideStart,
+    end: ELEMENT_TIMELINE.clouds.sideEnd,
+    fromX: -18,
+    fromY: 8,
+    toX: 8,
+    toY: 0,
+    startScale: 0.35,
+    endScale: 1.02,
+    peakOpacity: 1
+  });
+
+  animateCloud(cloudSmall, {
+    start: ELEMENT_TIMELINE.clouds.smallStart,
+    end: ELEMENT_TIMELINE.clouds.smallEnd,
+    fromX: 8,
+    fromY: 7,
+    toX: -82,
+    toY: 3,
+    startScale: 0.30,
+    endScale: 1.00,
+    peakOpacity: 0.84
+  });
+}
+
+function animateDecorative(element, { float = false, direction = 1 } = {}) {
+  const start = ELEMENT_TIMELINE.upperObjects.create;
+  const ready = ELEMENT_TIMELINE.upperObjects.ready;
+
+  if (!float) {
+    createAnimation(
+      element,
+      [
+        {
+          opacity: 0,
+          transform: "translate(-50%, -50%) scale(.94)"
+        },
+        {
+          opacity: 1,
+          transform: "translate(-50%, -50%) scale(1)"
+        }
+      ],
+      {
+        delay: start,
+        duration: ready - start,
+        easing: "ease-out"
+      }
+    );
+
+    return;
+  }
+
+  const duration = SCENE1_END - start;
+
+  createAnimation(
+    element,
+    [
+      {
+        opacity: 0,
+        transform: "translate(-50%, -50%) translateY(2%) scale(.94)",
+        offset: 0
+      },
+      {
+        opacity: 1,
+        transform: "translate(-50%, -50%) translateY(0) scale(1)",
+        offset: (ready - start) / duration
+      },
+      {
+        opacity: 1,
+        transform: `translate(-50%, -50%) translateY(${direction * -1.1}%) scale(1)`,
+        offset: 0.54
+      },
+      {
+        opacity: 1,
+        transform: `translate(-50%, -50%) translateY(${direction * 0.8}%) scale(1)`,
+        offset: 0.78
+      },
+      {
+        opacity: 1,
+        transform: `translate(-50%, -50%) translateY(${direction * -0.5}%) scale(1)`,
+        offset: 1
+      }
+    ],
+    {
+      delay: start,
+      duration,
+      easing: "ease-in-out"
+    }
+  );
+}
+
+function animateUpperObjects() {
+  /*
+    카메라는 이 시점에 우주선 근처를 확대해서 보고 있습니다.
+    따라서 상단 오브젝트는 카메라 밖에서 생성이 끝나고,
+    이후 Zoom Out 때 이미 존재하는 상태로 드러납니다.
+  */
+  animateDecorative(mothTop);
+  animateDecorative(jupiter);
+  animateDecorative(planetGreen);
+  animateDecorative(saturn);
+  animateDecorative(mothLower);
+
+  animateDecorative(ladyOnStar, { float: true, direction: 1 });
+  animateDecorative(deityFigure, { float: true, direction: -1 });
+}
+
+/* -------------------------------------------------------
+   Scene 1 재생
 ------------------------------------------------------- */
 async function playScene1() {
   cancelScene1();
   const token = activeSceneToken;
+
   resetScene1Elements();
   showOnly("scene1");
 
@@ -285,216 +803,25 @@ async function playScene1() {
 
   if (token !== activeSceneToken) return;
 
-  createAnimation(
-    backgroundDrift,
-    [
-      { transform: "translate3d(-0.9%, 0.7%, 0) scale(1.035)", offset: 0 },
-      { transform: "translate3d(0.7%, -0.2%, 0) scale(1.05)", offset: 0.34 },
-      { transform: "translate3d(-0.5%, -0.8%, 0) scale(1.045)", offset: 0.72 },
-      { transform: "translate3d(0.5%, -1.4%, 0) scale(1.058)", offset: 1 }
-    ],
-    { duration: SCENE1_DURATION, easing: "ease-in-out" }
-  );
+  buildCameraAnimation();
 
-  /* 카메라:
-     1) 관측자 쪽 확실히 보기
-     2) 오른쪽으로 이동하며 기본 우주선 보기
-     3) 이후 줌아웃
-  */
-  createAnimation(
-    sceneCamera,
-    [
-      { transform: "translate3d(0, 0, 0) scale(1)", offset: 0 },
-      { transform: "translate3d(18%, -22%, 0) scale(2.45)", offset: 0.16 },
-      { transform: "translate3d(18%, -22%, 0) scale(2.45)", offset: 0.32 },
-      { transform: "translate3d(-16%, -21%, 0) scale(2.45)", offset: 0.43 },
-      { transform: "translate3d(-16%, -21%, 0) scale(2.45)", offset: 0.53 },
-      { transform: "translate3d(-5%, -8%, 0) scale(1.55)", offset: 0.63 },
-      { transform: "translate3d(0, 0.5%, 0) scale(0.92)", offset: 0.73 },
-      { transform: "translate3d(4%, -1%, 0) scale(1.00)", offset: 0.84 },
-      { transform: "translate3d(0, 0, 0) scale(1)", offset: 0.94 },
-      { transform: "translate3d(0, -2%, 0) scale(1.02)", offset: 1 }
-    ],
-    {
-      duration: SCENE1_DURATION,
-      easing: "cubic-bezier(0.42, 0.05, 0.17, 1)"
-    }
-  );
+  animateGlobe();
+  animateObserver();
 
-  createAnimation(
-    globe,
-    [
-      { opacity: 0, transform: "translate3d(0, 30%, 0) scale(0.94)", offset: 0 },
-      { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)", offset: 0.10 },
-      { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)", offset: 1 }
-    ],
-    {
-      duration: SCENE1_DURATION,
-      easing: "cubic-bezier(.2,.8,.25,1)"
-    }
-  );
+  animateRocketIdle();
+  animateRocketLaunchSwitch();
+  animateRocketPath();
 
-  createAnimation(
-    observer,
-    [
-      { opacity: 0, transform: "perspective(1200px) rotateX(87deg) translate3d(0, 16%, 0) scale(0.74)", offset: 0 },
-      { opacity: 0, transform: "perspective(1200px) rotateX(87deg) translate3d(0, 16%, 0) scale(0.74)", offset: 0.14 },
-      { opacity: 1, transform: "perspective(1200px) rotateX(70deg) translate3d(0, 10%, 0) scale(0.82)", offset: 0.19 },
-      { opacity: 1, transform: "perspective(1200px) rotateX(30deg) translate3d(0, 5%, 0) scale(0.94)", offset: 0.25 },
-      { opacity: 1, transform: "perspective(1200px) rotateX(0deg) translate3d(0, 0, 0) scale(1)", offset: 0.30 },
-      { opacity: 1, transform: "perspective(1200px) rotateX(0deg) translate3d(0, 0, 0) scale(1)", offset: 1 }
-    ],
-    {
-      duration: SCENE1_DURATION,
-      easing: "cubic-bezier(.16,.85,.24,1)"
-    }
-  );
-
-  /* 기본 우주선: 나타난 후 launch 전까지 정지 */
-  createAnimation(
-    rocketGroup,
-    [
-      { opacity: 0, transform: "translate3d(0, 26%, 0) scale(0.66) rotate(4deg)", offset: 0 },
-      { opacity: 0, transform: "translate3d(0, 26%, 0) scale(0.66) rotate(4deg)", offset: 0.27 },
-      { opacity: 1, transform: "translate3d(0, 0, 0) scale(1) rotate(0deg)", offset: 0.35 },
-      { opacity: 1, transform: "translate3d(0, 0, 0) scale(1) rotate(0deg)", offset: 0.46 },
-
-      /* launch 후 약 2초 정도는 천천히 이동 */
-      { opacity: 1, transform: "translate3d(-8%, -8%, 0) scale(1) rotate(-5deg)", offset: 0.52 },
-      { opacity: 1, transform: "translate3d(-20%, -24%, 0) scale(1) rotate(-11deg)", offset: 0.58 },
-      { opacity: 1, transform: "translate3d(-42%, -54%, 0) scale(1) rotate(-22deg)", offset: 0.66 },
-
-      /* 파란 화살표 지점 이후 가속 */
-      { opacity: 1, transform: "translate3d(-110%, -92%, 0) scale(1) rotate(-34deg)", offset: 0.74 },
-      { opacity: 1, transform: "translate3d(-250%, -140%, 0) scale(1) rotate(-46deg)", offset: 0.82 },
-      { opacity: 1, transform: "translate3d(-430%, -188%, 0) scale(1) rotate(-56deg)", offset: 0.90 },
-      { opacity: 1, transform: "translate3d(-650%, -220%, 0) scale(1) rotate(-64deg)", offset: 1 }
-    ],
-    {
-      duration: SCENE1_DURATION,
-      easing: "cubic-bezier(.4,.03,.28,1)"
-    }
-  );
-
-  /* 기본 우주선 → 점화 우주선: 순간 전환 */
-  createAnimation(
-    rocketIdle,
-    [
-      { opacity: 1, offset: 0 },
-      { opacity: 1, offset: 0.459 },
-      { opacity: 0, offset: 0.460 },
-      { opacity: 0, offset: 1 }
-    ],
-    {
-      duration: SCENE1_DURATION,
-      easing: "linear"
-    }
-  );
-
-  createAnimation(
-    rocketLaunch,
-    [
-      { opacity: 0, offset: 0 },
-      { opacity: 0, offset: 0.459 },
-      { opacity: 1, offset: 0.460 },
-      { opacity: 1, offset: 1 }
-    ],
-    {
-      duration: SCENE1_DURATION,
-      easing: "linear"
-    }
-  );
-
-  /* 구름은 launch 전까지 절대 나타나지 않음 */
-  createAnimation(
-    cloudLeft,
-    [
-      { opacity: 0, transform: "translate3d(22%, 9%, 0) scale(0.34)", offset: 0 },
-      { opacity: 0, transform: "translate3d(22%, 9%, 0) scale(0.34)", offset: 0.470 },
-      { opacity: 0.96, transform: "translate3d(10%, 3%, 0) scale(0.60)", offset: 0.515 },
-      { opacity: 1, transform: "translate3d(0, 0, 0) scale(0.84)", offset: 0.60 },
-      { opacity: 1, transform: "translate3d(-8%, -1%, 0) scale(1.02)", offset: 1 }
-    ],
-    {
-      duration: SCENE1_DURATION,
-      easing: "cubic-bezier(.16,.74,.30,1)"
-    }
-  );
-
-  createAnimation(
-    cloudRight,
-    [
-      { opacity: 0, transform: "translate3d(-22%, 10%, 0) scale(0.34)", offset: 0 },
-      { opacity: 0, transform: "translate3d(-22%, 10%, 0) scale(0.34)", offset: 0.470 },
-      { opacity: 0.94, transform: "translate3d(-8%, 3%, 0) scale(0.60)", offset: 0.515 },
-      { opacity: 1, transform: "translate3d(0, 0, 0) scale(0.84)", offset: 0.60 },
-      { opacity: 1, transform: "translate3d(8%, -1%, 0) scale(1.02)", offset: 1 }
-    ],
-    {
-      duration: SCENE1_DURATION,
-      easing: "cubic-bezier(.16,.74,.30,1)"
-    }
-  );
-
-  createAnimation(
-    cloudSmall,
-    [
-      { opacity: 0, transform: "translate3d(10%, 10%, 0) scale(0.30)", offset: 0 },
-      { opacity: 0, transform: "translate3d(10%, 10%, 0) scale(0.30)", offset: 0.478 },
-      { opacity: 0.90, transform: "translate3d(0, 0, 0) scale(0.56)", offset: 0.525 },
-      { opacity: 0.88, transform: "translate3d(-20%, 0, 0) scale(0.68)", offset: 0.61 },
-      { opacity: 0.82, transform: "translate3d(-62%, 2%, 0) scale(0.92)", offset: 0.78 },
-      { opacity: 0.72, transform: "translate3d(-96%, 4%, 0) scale(1.02)", offset: 1 }
-    ],
-    {
-      duration: SCENE1_DURATION,
-      easing: "ease-out"
-    }
-  );
-
-  decorativeElements.forEach((element, index) => {
-    const dx = index % 2 === 0 ? "-4%" : "4%";
-    const dy = index % 3 === 0 ? "-3%" : "3%";
-
-    let revealFrames = [
-      { opacity: 0, transform: `translate3d(${dx}, ${dy}, 0) scale(0.92)`, offset: 0 },
-      { opacity: 0, transform: `translate3d(${dx}, ${dy}, 0) scale(0.92)`, offset: 0.56 },
-      { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)", offset: 0.71 },
-      { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)", offset: 1 }
-    ];
-
-    if (element === ladyOnStar) {
-      revealFrames = [
-        { opacity: 0, transform: "translate3d(-4%, 2%, 0) scale(0.92)", offset: 0 },
-        { opacity: 0, transform: "translate3d(-4%, 2%, 0) scale(0.92)", offset: 0.56 },
-        { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)", offset: 0.71 },
-        { opacity: 1, transform: "translate3d(0, -1.3%, 0) scale(1)", offset: 0.82 },
-        { opacity: 1, transform: "translate3d(0, 0.8%, 0) scale(1)", offset: 0.92 },
-        { opacity: 1, transform: "translate3d(0, -0.6%, 0) scale(1)", offset: 1 }
-      ];
-    }
-
-    if (element === deityFigure) {
-      revealFrames = [
-        { opacity: 0, transform: "translate3d(4%, 2%, 0) scale(0.92)", offset: 0 },
-        { opacity: 0, transform: "translate3d(4%, 2%, 0) scale(0.92)", offset: 0.56 },
-        { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)", offset: 0.715 },
-        { opacity: 1, transform: "translate3d(0, 1.0%, 0) scale(1)", offset: 0.83 },
-        { opacity: 1, transform: "translate3d(0, -0.7%, 0) scale(1)", offset: 0.93 },
-        { opacity: 1, transform: "translate3d(0, 0.5%, 0) scale(1)", offset: 1 }
-      ];
-    }
-
-    createAnimation(element, revealFrames, {
-      duration: SCENE1_DURATION,
-      easing: "ease-out"
-    });
-  });
+  animateClouds();
+  animateUpperObjects();
 
   scene1Clock = createAnimation(
     scene1Screen,
     [{ opacity: 1 }, { opacity: 1 }],
-    { duration: SCENE1_DURATION, easing: "linear" }
+    {
+      duration: SCENE1_END,
+      easing: "linear"
+    }
   );
 
   try {
@@ -618,7 +945,8 @@ form.addEventListener("submit", async (event) => {
 enterButton.addEventListener("click", async () => {
   enterButton.classList.add("is-loading");
   enterButton.disabled = true;
-  loadStatus.textContent = scene1Ready ? "우주로 이동합니다…" : "장면을 불러오는 중입니다…";
+  loadStatus.textContent =
+    scene1Ready ? "우주로 이동합니다…" : "장면을 불러오는 중입니다…";
   sceneLoading.hidden = false;
 
   if (!scene1Ready) {
@@ -640,5 +968,6 @@ replayButton.addEventListener("click", () => {
    초기화
 ------------------------------------------------------- */
 initializeFirebase();
+applyWorldLayout();
 renderStartScreen();
 preloadScene1();
