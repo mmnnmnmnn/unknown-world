@@ -13,3 +13,9 @@ Scene 5 타임라인은 v5와 동일하게 유지하고,
 영상 1회 길이가 약 3.04초이므로,
 2회차 영상이 완전히 끝나기 약 0.08초 전에 Scene 5가 종료됩니다.
 따라서 마지막 프레임에서 정지한 채 기다리는 구간이 없습니다.
+
+
+## v7 scene5 fallback fix
+- Scene 5 fallback image replaced with the newly provided valley landscape image.
+- Scene 5 debug badge updated to CLEAN V7.
+- Cache-busting query strings updated so the latest HTML/CSS/JS load correctly.
