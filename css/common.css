@@ -320,7 +320,10 @@ button { -webkit-tap-highlight-color: transparent; }
 
 .completed-panel h2 {
   margin: 6px 0 8px;
-  font-size: 25px;
+  width: 100%;
+  white-space: nowrap;
+  font-size: clamp(18px, 6vw, 25px);
+  letter-spacing: -0.02em;
 }
 
 .completed-copy {
