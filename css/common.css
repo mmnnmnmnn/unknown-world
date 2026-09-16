@@ -1,14 +1,32 @@
 @font-face {
-  font-family: "UnTaza";
-  src: url("../assets/fonts/UnTaza.ttf") format("truetype");
-  font-display: swap;
+  font-family: "UnTazaWeb";
+  src: url("../assets/fonts/UnTaza.ttf?v=18") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "UnTazaWeb";
+  src: url("../assets/fonts/UnTaza.ttf?v=18") format("truetype");
+  font-style: normal;
+  font-weight: 500;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "UnTazaWeb";
+  src: url("../assets/fonts/UnTaza.ttf?v=18") format("truetype");
+  font-style: normal;
+  font-weight: 700;
+  font-display: block;
 }
 
 [hidden] { display: none !important; }
 * { box-sizing: border-box; }
 
 :root {
-  font-family: "UnTaza", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "UnTazaWeb", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #f8f3e8;
   background: #07101b;
   --scene-ratio: 0.5625;
@@ -23,6 +41,33 @@ html, body {
 
 body { min-height: 100dvh; }
 button, input { font: inherit; }
+
+/* Force the exhibition UI to use the bundled font.
+   This avoids browser/device inheritance differences from :root alone. */
+html,
+body,
+.mobile-page,
+.mobile-app,
+.mobile-app button,
+.mobile-app input,
+.mobile-app textarea,
+.mobile-app select,
+.mobile-app p,
+.mobile-app h1,
+.mobile-app h2,
+.mobile-app h3,
+.mobile-app label,
+.mobile-app span,
+.mobile-app div,
+.scene3-end-title,
+.scene4-title {
+  font-family: "UnTazaWeb", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+}
+
+/* Development labels intentionally stay in system UI font. */
+.scene-debug-badge {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+}
 button { -webkit-tap-highlight-color: transparent; }
 .mobile-app, .app-screen { min-height: 100dvh; }
 
