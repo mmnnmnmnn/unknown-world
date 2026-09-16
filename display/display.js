@@ -10,7 +10,6 @@ import {
   isFirebaseConfigured
 } from "../js/firebase-config.js";
 
-const STAR_ONLY_THRESHOLD = 50;
 const NEW_QUESTION_HIGHLIGHT_MS = 4000;
 const SAFE_X = 43;
 const SAFE_Y = 38;
@@ -78,14 +77,20 @@ function getTextSize(count) {
   if (count <= 9) return 42;
   if (count <= 18) return 34;
   if (count <= 30) return 28;
-  if (count < STAR_ONLY_THRESHOLD) return 24;
-  return 0;
+  if (count <= 50) return 24;
+  if (count <= 80) return 21;
+  if (count <= 120) return 19;
+  return 18;
 }
 
-function getStarSize(count, index) {
-  const base = count < STAR_ONLY_THRESHOLD ? 8 : 5.5;
-  const ageFactor = count <= 1 ? 1.7 : 1 - Math.min(index / Math.max(1, count - 1), 1) * 0.22;
-  return Math.max(4, base * ageFactor);
+function getNodeMaxWidth(count) {
+  if (count <= 4) return 38;
+  if (count <= 12) return 34;
+  if (count <= 30) return 28;
+  if (count <= 50) return 23;
+  if (count <= 80) return 19;
+  if (count <= 120) return 16;
+  return 14;
 }
 
 function computePosition(record, index, count) {
@@ -114,15 +119,11 @@ function createNode(record) {
   node.className = "question-node";
   node.dataset.responseId = record.id;
 
-  const star = document.createElement("span");
-  star.className = "question-star";
-  star.setAttribute("aria-hidden", "true");
-
   const text = document.createElement("span");
   text.className = "question-text";
   text.textContent = record.question;
 
-  node.append(star, text);
+  node.append(text);
   questionField.append(node);
   nodes.set(record.id, node);
   return node;
@@ -138,8 +139,7 @@ function updateNodeText(node, record) {
 function layoutNodes(records) {
   const count = records.length;
   const textSize = getTextSize(count);
-  const starOnly = count >= STAR_ONLY_THRESHOLD;
-  appRoot.classList.toggle("star-only", starOnly);
+  const maxWidth = getNodeMaxWidth(count);
   emptyState.hidden = count > 0;
 
   records.forEach((record, index) => {
@@ -150,7 +150,7 @@ function layoutNodes(records) {
     node.style.setProperty("--x", `${position.x}%`);
     node.style.setProperty("--y", `${position.y}%`);
     node.style.setProperty("--text-size", `${textSize}px`);
-    node.style.setProperty("--star-size", `${getStarSize(count, index)}px`);
+    node.style.setProperty("--node-max-width", `${maxWidth}vw`);
   });
 }
 
