@@ -290,19 +290,20 @@ const SCENE4_END = SCENE4_TIMELINE.preScene5HoldEnd;
 /* =======================================================
    Scene 5 — 아직 오지 않은 미래
    -------------------------------------------------------
-   0.0~2.2s   : Scene 4 → Scene 5 우측 슬라이드 + blur 전환
-                (이 구간은 fallback 정지 이미지로 전환)
-   2.2s       : Scene 5 전환 완료 → 타임랩스 재생 시작
-   2.2~약8.3s : 타임랩스 총 2회 재생
-   5.2~6.0s   : Scene 5 시작 3초 후 "아직 오지 않은 미래." blur → sharp
-   6.0~9.4s   : 문구 완전 표시 3.4초
+   0.0~2.2s : Scene 4 → Scene 5 우측 슬라이드 + blur 전환
+              (이 구간은 fallback 정지 이미지로 전환)
+   2.2s     : Scene 5 전환 완료 → 타임랩스 재생 시작
+   2.2~8.2s : 타임랩스 총 2회 재생
+              (2회 재생이 8.2초에 정확히 끝나도록 약 1.014배 재생)
+   4.0~4.8s : "아직 오지 않은 미래." blur → sharp
+   4.8~8.2s : 문구 완전 표시 3.4초
 ======================================================= */
 const SCENE5_TIMELINE = {
   transitionEnd: 2200,
   videoStart: 2200,
-  titleStart: 5200,
-  titleReady: 6000,
-  end: 9400
+  titleStart: 4000,
+  titleReady: 4800,
+  end: 8200
 };
 
 const SCENE5_END = SCENE5_TIMELINE.end;
@@ -1894,7 +1895,7 @@ function resetScene5() {
 
   futureTimelapse.pause();
   futureTimelapse.loop = false;
-  futureTimelapse.playbackRate = 1;
+  futureTimelapse.playbackRate = 1.013874;
   futureTimelapse.onended = null;
   try {
     futureTimelapse.currentTime = 0;
