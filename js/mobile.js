@@ -289,28 +289,28 @@ const SCENE5_END = SCENE5_TIMELINE.end;
 const SCENE6_TIMELINE = {
   transitionEnd: 1400,
 
-  // Scene 6의 완전 표시 시간을 v8보다 0.5초 늘림.
-  scene6InStart: 1400, scene6InEnd: 2000, scene6OutStart: 4800, scene6OutEnd: 5400,
+  // v17: 긴 Scene 6 문장 완전 표시 시간을 추가로 0.5초 연장.
+  scene6InStart: 1400, scene6InEnd: 2000, scene6OutStart: 5300, scene6OutEnd: 5900,
 
-  // 이후 장면은 모두 0.5초씩 뒤로 이동해 기존 개별 재생시간을 유지.
-  scene7Start: 5400,
-  scene7Line1Start: 5700, scene7Line1End: 6700,
-  scene7PauseEnd: 7300,
-  scene7Line2Start: 7300, scene7Line2End: 8800,
-  scene7OutStart: 9700, scene7OutEnd: 10300,
+  // Scene 7 이후 전체 흐름도 0.5초씩 뒤로 이동해 각 장면 길이는 유지.
+  scene7Start: 5900,
+  scene7Line1Start: 6200, scene7Line1End: 7200,
+  scene7PauseEnd: 7800,
+  scene7Line2Start: 7800, scene7Line2End: 9300,
+  scene7OutStart: 10200, scene7OutEnd: 10800,
 
-  scene8InStart: 10300, scene8InEnd: 10900, scene8OutStart: 12900, scene8OutEnd: 13500,
-  scene9InStart: 13500, scene9InEnd: 14100, scene9OutStart: 16100, scene9OutEnd: 16700,
-  scene10InStart: 16700, scene10InEnd: 17300, scene10OutStart: 19300, scene10OutEnd: 19900,
-  scene11InStart: 19900, scene11InEnd: 20500, scene11OutStart: 22100, scene11OutEnd: 22700,
-  scene12InStart: 22700, scene12InEnd: 23300, scene12OutStart: 24900, scene12OutEnd: 25500,
+  scene8InStart: 10800, scene8InEnd: 11400, scene8OutStart: 13400, scene8OutEnd: 14000,
+  scene9InStart: 14000, scene9InEnd: 14600, scene9OutStart: 16600, scene9OutEnd: 17200,
+  scene10InStart: 17200, scene10InEnd: 17800, scene10OutStart: 19800, scene10OutEnd: 20400,
+  scene11InStart: 20400, scene11InEnd: 21000, scene11OutStart: 22600, scene11OutEnd: 23200,
+  scene12InStart: 23200, scene12InEnd: 23800, scene12OutStart: 25400, scene12OutEnd: 26000,
 
-  scene13Q1Start: 25500, scene13Q1End: 26000,
-  scene13Q2Start: 26300, scene13Q2End: 26800,
-  scene13Q3Start: 27100, scene13Q3End: 27600,
-  scene13OutStart: 29500, scene13OutEnd: 30100,
+  scene13Q1Start: 26000, scene13Q1End: 26500,
+  scene13Q2Start: 26800, scene13Q2End: 27300,
+  scene13Q3Start: 27600, scene13Q3End: 28100,
+  scene13OutStart: 30000, scene13OutEnd: 30600,
 
-  end: 30100
+  end: 30600
 };
 
 const SCENE6_END = SCENE6_TIMELINE.end;
@@ -369,6 +369,10 @@ const seqScene7 = document.querySelector("#seqScene7");
 const seqScene8 = document.querySelector("#seqScene8");
 const seqScene9 = document.querySelector("#seqScene9");
 const seqScene10 = document.querySelector("#seqScene10");
+const scene10Jesus = document.querySelector(".scene10-jesus");
+const scene10Alien = document.querySelector(".scene10-alien");
+const scene10CaptionLeft = document.querySelector("#scene10CaptionLeft");
+const scene10CaptionRight = document.querySelector("#scene10CaptionRight");
 const seqScene11 = document.querySelector("#seqScene11");
 const seqScene12 = document.querySelector("#seqScene12");
 const seqScene13 = document.querySelector("#seqScene13");
@@ -2124,6 +2128,13 @@ function resetScene6Sequence() {
   scene7Cursor1.style.display = "inline-block";
   scene7Cursor2.style.display = "none";
 
+  [scene10Jesus, scene10Alien, scene10CaptionLeft, scene10CaptionRight].forEach((el) => {
+    if (!el) return;
+    el.style.opacity = "0";
+    el.style.filter = "blur(7px)";
+    el.style.transform = "";
+  });
+
   [scene13Q1, scene13Q2, scene13Q3].forEach((el) => {
     el.style.opacity = "0";
     el.style.filter = "blur(7px)";
@@ -2201,6 +2212,56 @@ function renderUpPanel(panel, time, inStart, inEnd, outStart, outEnd) {
   panel.style.filter = `blur(${lerp(7, 0, inP) + lerp(0, 7, outP)}px)`;
   panel.style.transform =
     `translate3d(0, ${lerp(18, 0, inP) + lerp(0, -18, outP)}px, 0)`;
+}
+
+function renderScene10(time) {
+  const inStart = SCENE6_TIMELINE.scene10InStart;
+  const inEnd = SCENE6_TIMELINE.scene10InEnd;
+  const outStart = SCENE6_TIMELINE.scene10OutStart;
+  const outEnd = SCENE6_TIMELINE.scene10OutEnd;
+
+  if (time < inStart || time >= outEnd) {
+    setPanelHidden(seqScene10);
+    [scene10Jesus, scene10Alien, scene10CaptionLeft, scene10CaptionRight].forEach((el) => {
+      if (!el) return;
+      el.style.opacity = "0";
+      el.style.filter = "blur(7px)";
+    });
+    return;
+  }
+
+  // Parent stays fixed. Images and text use independent motion paths.
+  seqScene10.style.opacity = "1";
+  seqScene10.style.filter = "none";
+  seqScene10.style.transform = "none";
+
+  const inP = easeSmooth(segmentProgress(time, inStart, inEnd));
+  const outP = easeSmooth(segmentProgress(time, outStart, outEnd));
+  const opacity = clamp(inP * (1 - outP));
+  const blur = lerp(7, 0, inP) + lerp(0, 7, outP);
+  const imageY = lerp(18, 0, inP) + lerp(0, -18, outP);
+
+  // Images: keep existing bottom→top entrance and top exit.
+  [scene10Jesus, scene10Alien].forEach((el) => {
+    el.style.opacity = String(opacity);
+    el.style.filter = `blur(${blur}px)`;
+    el.style.transform = `translate3d(0, ${imageY}px, 0)`;
+  });
+
+  // Text 1: left → right, converging to its final position.
+  const leftX = lerp(-12, 0, inP);
+  const textY = lerp(0, -18, outP);
+  scene10CaptionLeft.style.opacity = String(opacity);
+  scene10CaptionLeft.style.filter = `blur(${blur}px)`;
+  scene10CaptionLeft.style.transform =
+    `translate(-50%, -50%) translate3d(${leftX}vw, ${textY}px, 0)`;
+
+  // Text 2: right → left, converging to its final position.
+  const rightX = lerp(12, 0, inP);
+  scene10CaptionRight.style.opacity = String(opacity);
+  scene10CaptionRight.style.filter = `blur(${blur}px)`;
+  scene10CaptionRight.style.transform =
+    `translate(-50%, -50%) translate3d(${rightX}vw, ${textY}px, 0)`;
 }
 
 function typedSlice(text, progress) {
@@ -2304,11 +2365,7 @@ function renderScene6Sequence(time) {
     SCENE6_TIMELINE.scene9InStart, SCENE6_TIMELINE.scene9InEnd,
     SCENE6_TIMELINE.scene9OutStart, SCENE6_TIMELINE.scene9OutEnd
   );
-  renderUpPanel(
-    seqScene10, time,
-    SCENE6_TIMELINE.scene10InStart, SCENE6_TIMELINE.scene10InEnd,
-    SCENE6_TIMELINE.scene10OutStart, SCENE6_TIMELINE.scene10OutEnd
-  );
+  renderScene10(time);
   renderUpPanel(
     seqScene11, time,
     SCENE6_TIMELINE.scene11InStart, SCENE6_TIMELINE.scene11InEnd,

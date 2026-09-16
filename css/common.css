@@ -1201,3 +1201,56 @@ button { -webkit-tap-highlight-color: transparent; }
 .scene13-question.q3 {
   left: 15%;
 }
+
+
+/* =======================================================
+   V17 — Scene 6~14 sequence tuning
+   ======================================================= */
+
+/* Scene 9
+   Current planet 57% → 62.7% (= 1.1×), center preserved around x=64.5. */
+.scene9-planet {
+  width: 62.7%;
+  left: 33.15%;
+}
+
+/* Shorter caption, shifted right so its visual center is about x=60. */
+.scene9-caption {
+  left: 60%;
+  width: 76%;
+  transform: translateX(-50%);
+  text-align: center;
+  white-space: normal;
+}
+
+/* Scene 10
+   Images keep their existing layout and vertical movement.
+   The two captions independently converge from opposite sides. */
+.scene10-caption {
+  width: 52%;
+  margin: 0;
+  text-align: center;
+  white-space: nowrap;
+  opacity: 0;
+  filter: blur(7px);
+  will-change: opacity, transform, filter;
+}
+
+.scene10-caption-left {
+  left: 40%;
+  top: 44.5%;
+  transform: translate(-50%, -50%);
+}
+
+.scene10-caption-right {
+  left: 68%;
+  top: 50.5%;
+  transform: translate(-50%, -50%);
+}
+
+/* Scene 14 kicker
+   80% of previous font scale and moved upward by 10 coordinate units. */
+.form-kicker {
+  top: 22.5%;
+  font-size: clamp(22px, 4.96vw, 32px);
+}
