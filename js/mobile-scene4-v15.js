@@ -47,7 +47,7 @@ const LAST_RESPONSE_KEY = "unknown-world-last-response";
 const SCENE23_ASSETS = [
   "./assets/scene02-milkyway/milkyway-bg.png",
   "./assets/scene02-milkyway/galaxy-closeup-transition.png",
-  "./assets/scene03-galaxy-cluster/galaxy-cluster-bg.png"
+  "./assets/scene03-galaxy-cluster/galaxy-cluster-bg-rotated-hires.webp"
 ];
 
 const SCENE4_ASSETS = [
@@ -199,14 +199,14 @@ const SCENE23_TIMELINE = {
 
   // 줌아웃 시작 후 0.5초 뒤 중앙 이동 시작
   clusterPanStart: 12950,
-  clusterZoomOutEnd: 16250,
+  clusterZoomOutEnd: 14983,
 
   // Scene 3 완료 텍스트
-  scene3TitleStart: 16600,
-  scene3TitleReady: 17350,
+  scene3TitleStart: 15333,
+  scene3TitleReady: 16083,
 
   // Scene 4 직전 장면 유지
-  preScene4HoldEnd: 20750
+  preScene4HoldEnd: 19483
 };
 
 const MILKYWAY_TARGET = {
@@ -230,8 +230,8 @@ const CLOSEUP_GALAXY_CENTER = {
 const CLUSTER_TARGET = {
   // 사용자가 노란 원으로 지정한 은하.
   // 주석 이미지의 노란 픽셀 중심을 원본 941×1672 비율로 환산한 값.
-  x: 64.03,
-  y: 31.92
+  x: 59.15,
+  y: 33.60
 };
 
 const SCENE23_END = SCENE23_TIMELINE.preScene4HoldEnd;

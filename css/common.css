@@ -1,6 +1,6 @@
 @font-face {
-  font-family: "MaruBuri";
-  src: url("../assets/fonts/MaruBuri-Bold.ttf") format("truetype");
+  font-family: "UnTaza";
+  src: url("../assets/fonts/UnTaza.ttf") format("truetype");
   font-display: swap;
 }
 
@@ -8,7 +8,7 @@
 * { box-sizing: border-box; }
 
 :root {
-  font-family: "MaruBuri", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "UnTaza", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #f8f3e8;
   background: #07101b;
   --scene-ratio: 0.5625;
