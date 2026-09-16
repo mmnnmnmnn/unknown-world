@@ -4,31 +4,43 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="dark" />
-  <title>데이터 너머, 미지의 세계 — 대형 모니터 테스트</title>
-  <link rel="stylesheet" href="../css/common.css?v=clean-v1" />
+  <title>데이터 너머, 미지의 세계 — 실시간 질문 시각화</title>
+  <link rel="stylesheet" href="../css/common.css?v=clean-v10-scene7-font" />
+  <link rel="stylesheet" href="./display.css?v=display-v1" />
 </head>
 <body class="display-page">
-  <main class="display-shell">
-    <header class="display-header">
-      <div>
-        <p class="eyebrow">1단계 연결 테스트</p>
-        <h1>실시간 질문</h1>
-      </div>
-      <div class="connection-box">
-        <span id="connectionDot" class="connection-dot" aria-hidden="true"></span>
-        <span id="connectionText">연결 확인 중</span>
-      </div>
-    </header>
+  <main id="displayApp" class="display-app" aria-live="polite">
+    <img
+      class="display-bg"
+      src="../assets/display/space-bg.jpg"
+      alt=""
+      draggable="false"
+      aria-hidden="true"
+    />
+    <div class="display-shade" aria-hidden="true"></div>
+    <div class="display-nebula" aria-hidden="true"></div>
 
-    <section id="questionField" class="question-field" aria-live="polite">
-      <p id="emptyState" class="empty-state">아직 등록된 질문이 없습니다.</p>
-    </section>
+    <section id="questionField" class="question-field" aria-label="실시간 질문 시각화"></section>
 
-    <div id="configWarning" class="warning display-warning" hidden>
-      Firebase 설정값이 아직 입력되지 않았습니다. <code>js/firebase-config.js</code>를 수정해주세요.
+    <div id="emptyState" class="empty-state">
+      <p>당신의 질문을 기다리고 있습니다.</p>
+    </div>
+
+    <div id="newQuestionOverlay" class="new-question-overlay" aria-hidden="true">
+      <div class="new-question-star" aria-hidden="true"></div>
+      <p id="newQuestionText" class="new-question-text"></p>
+    </div>
+
+    <div id="connectionState" class="connection-state" data-state="checking" aria-label="Firebase 연결 상태">
+      <span class="connection-dot" aria-hidden="true"></span>
+      <span id="connectionText">연결 확인 중</span>
+    </div>
+
+    <div id="configWarning" class="display-warning" hidden>
+      Firebase 설정을 확인해주세요.
     </div>
   </main>
 
-  <script type="module" src="../js/display.js?v=clean-v1"></script>
+  <script type="module" src="./display.js?v=display-v1"></script>
 </body>
 </html>
