@@ -291,15 +291,18 @@ const SCENE4_END = SCENE4_TIMELINE.preScene5HoldEnd;
    Scene 5 — 아직 오지 않은 미래
    -------------------------------------------------------
    0.0~2.2s   : Scene 4 → Scene 5 우측 슬라이드 + blur 전환
-   0.0~3.04s  : 미래 타임랩스 1회 재생 (반복 없음)
-   3.20~4.00s : "아직 오지 않은 미래." blur → sharp
-   4.00~7.40s : 문구 완전 표시 3.4초
+                (이 구간은 fallback 정지 이미지로 전환)
+   2.2s       : Scene 5 전환 완료 → 타임랩스 재생 시작
+   2.2~약8.3s : 타임랩스 총 2회 재생
+   5.2~6.0s   : Scene 5 시작 3초 후 "아직 오지 않은 미래." blur → sharp
+   6.0~9.4s   : 문구 완전 표시 3.4초
 ======================================================= */
 const SCENE5_TIMELINE = {
   transitionEnd: 2200,
-  titleStart: 3200,
-  titleReady: 4000,
-  end: 7400
+  videoStart: 2200,
+  titleStart: 5200,
+  titleReady: 6000,
+  end: 9400
 };
 
 const SCENE5_END = SCENE5_TIMELINE.end;
@@ -407,6 +410,8 @@ let scene5Running = false;
 let scene5StartTime = 0;
 let scene5UseFallback = false;
 let scene5VideoReady = false;
+let scene5VideoStarted = false;
+let scene5VideoPlayCount = 0;
 
 /* -------------------------------------------------------
    Util
@@ -1864,6 +1869,10 @@ async function playScene4() {
    Scene 5 — 아직 오지 않은 미래
 ------------------------------------------------------- */
 function resetScene5() {
+  // Scene 4 마지막 화면 위에 Scene 5를 겹쳐 올리되,
+  // 전환이 시작되는 순간 검은 화면이 덮이지 않도록 screen 배경은 투명하게 시작한다.
+  scene5Screen.style.background = "rgba(3, 7, 13, 0)";
+
   scene5Viewport.style.opacity = "0";
   scene5Viewport.style.transform = "translate3d(100%, 0, 0)";
   scene5Viewport.style.filter = "blur(12px) brightness(0.64)";
@@ -1875,11 +1884,18 @@ function resetScene5() {
   scene5Title.style.filter = "blur(8px)";
   scene5Title.style.transform = "translate(-50%, calc(-50% + 10px))";
 
-  futureFallback.style.opacity = scene5UseFallback ? "1" : "0";
-  futureTimelapse.style.opacity = scene5UseFallback ? "0" : "1";
+  // Scene 4 → 5 전환 중에는 반드시 fallback 정지 이미지만 보여준다.
+  // 영상은 Scene 5 전환이 완전히 끝난 뒤 시작한다.
+  futureFallback.style.opacity = "1";
+  futureTimelapse.style.opacity = "0";
+
+  scene5VideoStarted = false;
+  scene5VideoPlayCount = 0;
 
   futureTimelapse.pause();
+  futureTimelapse.loop = false;
   futureTimelapse.playbackRate = 1;
+  futureTimelapse.onended = null;
   try {
     futureTimelapse.currentTime = 0;
   } catch {
@@ -1892,9 +1908,10 @@ function renderScene5Transition(time) {
     segmentProgress(time, 0, SCENE5_TIMELINE.transitionEnd)
   );
 
-  // Scene 4는 왼쪽으로 천천히 밀리며 흐려지고 어두워짐.
+  // Scene 4 마지막 프레임 자체가 그대로 왼쪽으로 이동하며 Scene 5를 드러낸다.
+  // 별도의 검은 중간 화면을 만들지 않는다.
   scene4Viewport.style.transform =
-    `translate3d(${lerp(0, -34, p)}%, 0, 0)`;
+    `translate3d(${lerp(0, -42, p)}%, 0, 0)`;
   scene4Viewport.style.filter =
     `blur(${lerp(0, 8, p)}px) brightness(${lerp(1, 0.58, p)})`;
   scene4Viewport.style.opacity = String(lerp(1, 0.20, p));
@@ -1904,7 +1921,13 @@ function renderScene5Transition(time) {
     `translate3d(${lerp(100, 0, p)}%, 0, 0)`;
   scene5Viewport.style.filter =
     `blur(${lerp(12, 0, p)}px) brightness(${lerp(0.64, 1, p)})`;
-  scene5Viewport.style.opacity = String(lerp(0.45, 1, p));
+  scene5Viewport.style.opacity = String(lerp(0.62, 1, p));
+
+  // Scene 5 screen 자체의 배경은 전환 후반에만 서서히 생긴다.
+  // 초반에는 완전히 투명하므로 Scene 4의 마지막 프레임이 그대로 이어져 보인다.
+  const backdropP = easeSmooth(segmentProgress(p, 0.72, 1));
+  scene5Screen.style.background =
+    `rgba(3, 7, 13, ${lerp(0, 1, backdropP)})`;
 
   // 두 장면 사이를 지나가는 어두운 띠. 평면적인 검정 화면 대신 연결감을 준다.
   const veilOpacity = Math.sin(Math.PI * clamp(p)) * 0.72;
@@ -1913,10 +1936,61 @@ function renderScene5Transition(time) {
     `translate3d(${lerp(28, -20, p)}%, 0, 0) skewX(-7deg)`;
 }
 
+function startScene5Video(token) {
+  if (scene5VideoStarted || scene5UseFallback || !scene5VideoReady) return;
+
+  scene5VideoStarted = true;
+  scene5VideoPlayCount = 1;
+
+  // video의 poster가 fallback과 동일하므로, 전환 완료 순간 video를 올려도
+  // 첫 프레임이 준비되기 전 검은 화면이 끼지 않는다.
+  futureTimelapse.style.opacity = "1";
+  futureFallback.style.opacity = "1";
+
+  futureTimelapse.onended = async () => {
+    if (token !== activeSceneToken || !scene5Running) return;
+
+    if (scene5VideoPlayCount < 2) {
+      scene5VideoPlayCount += 1;
+      try {
+        futureTimelapse.currentTime = 0;
+        await futureTimelapse.play();
+      } catch (error) {
+        console.warn("Scene 5 두 번째 타임랩스 재생 실패 — 마지막 프레임 유지", error);
+      }
+      return;
+    }
+
+    // 두 번째 재생 종료 후 마지막 프레임을 유지한다.
+    futureTimelapse.pause();
+  };
+
+  try {
+    futureTimelapse.currentTime = 0;
+    const playPromise = futureTimelapse.play();
+    if (playPromise && typeof playPromise.catch === "function") {
+      playPromise.catch((error) => {
+        console.warn("Scene 5 동영상 재생 실패 — fallback 이미지 유지", error);
+        scene5UseFallback = true;
+        futureTimelapse.pause();
+        futureTimelapse.style.opacity = "0";
+        futureFallback.style.opacity = "1";
+      });
+    }
+  } catch (error) {
+    console.warn("Scene 5 동영상 재생 실패 — fallback 이미지 유지", error);
+    scene5UseFallback = true;
+    futureTimelapse.pause();
+    futureTimelapse.style.opacity = "0";
+    futureFallback.style.opacity = "1";
+  }
+}
+
 function renderScene5(time) {
   if (time <= SCENE5_TIMELINE.transitionEnd) {
     renderScene5Transition(time);
   } else {
+    scene5Screen.style.background = "#03070d";
     scene5Viewport.style.transform = "translate3d(0, 0, 0)";
     scene5Viewport.style.filter = "blur(0px) brightness(1)";
     scene5Viewport.style.opacity = "1";
@@ -1946,6 +2020,9 @@ function stopScene5() {
 
   scene5RafId = 0;
   futureTimelapse.pause();
+  futureTimelapse.onended = null;
+  scene5VideoStarted = false;
+  scene5VideoPlayCount = 0;
 }
 
 function scene5Loop(now, token) {
@@ -1965,6 +2042,15 @@ function scene5Loop(now, token) {
     scene4Viewport.style.transform = "translate3d(0, 0, 0)";
     scene4Viewport.style.filter = "none";
     scene4Viewport.style.opacity = "1";
+  }
+
+  // 전환 중에는 fallback 정지 이미지를 유지하고,
+  // Scene 5가 화면을 완전히 채운 뒤에만 타임랩스를 시작한다.
+  if (
+    time >= SCENE5_TIMELINE.videoStart &&
+    !scene5VideoStarted
+  ) {
+    startScene5Video(token);
   }
 
   if (elapsed >= SCENE5_END) {
@@ -2004,21 +2090,9 @@ async function playScene5() {
   resetScene5();
   scene5Screen.hidden = false;
 
-  // 타임랩스는 장면 시작과 동시에 한 번만 재생.
-  // 3.04초짜리 원본을 반복하지 않고 마지막 프레임에서 멈춘다.
-  if (!scene5UseFallback) {
-    try {
-      futureTimelapse.currentTime = 0;
-      await futureTimelapse.play();
-    } catch (error) {
-      console.warn("Scene 5 동영상 재생 실패 — fallback 이미지 사용", error);
-      scene5UseFallback = true;
-      futureTimelapse.pause();
-      futureTimelapse.style.opacity = "0";
-      futureFallback.style.opacity = "1";
-    }
-  }
-
+  // 여기서는 영상을 재생하지 않는다.
+  // Scene 4 → 5 전환은 fallback 정지 이미지로 완료하고,
+  // scene5Loop가 transitionEnd에 도달한 순간 타임랩스를 시작한다.
   if (token !== activeSceneToken) return;
 
   scene5Running = true;
