@@ -22,10 +22,13 @@ const newQuestionText = document.querySelector("#newQuestionText");
 const connectionState = document.querySelector("#connectionState");
 const connectionText = document.querySelector("#connectionText");
 const configWarning = document.querySelector("#configWarning");
+const winnerOverlay = document.querySelector("#winnerOverlay");
+const winnerQuestion = document.querySelector("#winnerQuestion");
 
 const nodes = new Map();
 let firstSnapshotReceived = false;
 let highlightTimer = 0;
+let winnerTimer = 0;
 
 function setConnectionState(state) {
   connectionState.dataset.state = state;
@@ -231,6 +234,43 @@ function syncSnapshot(snapshot) {
   }
 }
 
+
+function clearWinnerOverlay() {
+  window.clearTimeout(winnerTimer);
+  winnerTimer = 0;
+  winnerOverlay.hidden = true;
+  winnerQuestion.textContent = "";
+  appRoot.classList.remove("is-winner");
+}
+
+function syncWinnerState(snapshot) {
+  const state = snapshot.val();
+
+  if (!state || state.active !== true || !state.question) {
+    clearWinnerOverlay();
+    return;
+  }
+
+  const expiresAt = Number(state.expiresAt ?? 0);
+  const remaining = expiresAt > 0
+    ? expiresAt - Date.now()
+    : 15000;
+
+  if (remaining <= 0) {
+    clearWinnerOverlay();
+    return;
+  }
+
+  window.clearTimeout(winnerTimer);
+  winnerQuestion.textContent = String(state.question);
+  winnerOverlay.hidden = false;
+  appRoot.classList.add("is-winner");
+
+  winnerTimer = window.setTimeout(() => {
+    clearWinnerOverlay();
+  }, remaining);
+}
+
 function initialize() {
   if (!isFirebaseConfigured) {
     configWarning.hidden = false;
@@ -252,6 +292,14 @@ function initialize() {
       setConnectionState("offline");
       configWarning.hidden = false;
       configWarning.textContent = "질문 데이터를 불러오지 못했습니다. Firebase 권한을 확인해주세요.";
+    }
+  );
+
+  onValue(
+    ref(db, "displayState/currentWinner"),
+    syncWinnerState,
+    () => {
+      clearWinnerOverlay();
     }
   );
 }

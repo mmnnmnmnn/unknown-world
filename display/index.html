@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark" />
   <title>데이터 너머, 미지의 세계 — 실시간 질문 시각화</title>
   <link rel="stylesheet" href="../css/common.css?v=clean-v10-scene7-font" />
-  <link rel="stylesheet" href="./display.css?v=display-v3" />
+  <link rel="stylesheet" href="./display.css?v=display-v4-admin" />
 </head>
 <body class="display-page">
   <main id="displayApp" class="display-app" aria-live="polite">
@@ -30,6 +30,11 @@
       <p id="newQuestionText" class="new-question-text"></p>
     </div>
 
+
+    <section id="winnerOverlay" class="winner-overlay" hidden aria-live="assertive">
+      <p id="winnerQuestion" class="winner-question"></p>
+    </section>
+
     <div id="connectionState" class="connection-state" data-state="checking" aria-label="Firebase 연결 상태">
       <span class="connection-dot" aria-hidden="true"></span>
       <span id="connectionText">연결 확인 중</span>
@@ -40,6 +45,6 @@
     </div>
   </main>
 
-  <script type="module" src="./display.js?v=display-v3"></script>
+  <script type="module" src="./display.js?v=display-v4-admin"></script>
 </body>
 </html>

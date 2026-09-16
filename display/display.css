@@ -264,3 +264,63 @@ body.display-page {
     animation-duration: 1ms !important;
   }
 }
+
+
+/* =======================================================
+   Display v4 — draw/winner overlay
+   ======================================================= */
+
+.winner-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  display: grid;
+  place-items: center;
+  padding: 8vw;
+  background: rgba(2, 5, 10, .34);
+  backdrop-filter: blur(2px);
+}
+
+.winner-overlay[hidden] {
+  display: none;
+}
+
+.winner-question {
+  width: min(76vw, 1360px);
+  margin: 0;
+  color: #fff;
+  text-align: center;
+  font-size: clamp(54px, 6vw, 112px);
+  font-weight: 400;
+  line-height: 1.28;
+  letter-spacing: -.035em;
+  text-shadow:
+    0 4px 28px rgba(0,0,0,.92),
+    0 0 48px rgba(0,0,0,.58);
+  animation: winnerReveal 900ms cubic-bezier(.2,.75,.2,1) both;
+}
+
+.display-app.is-winner .question-field,
+.display-app.is-winner .empty-state,
+.display-app.is-winner .new-question-overlay {
+  opacity: 0;
+}
+
+@keyframes winnerReveal {
+  0% {
+    opacity: 0;
+    filter: blur(12px);
+    transform: scale(.94);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .winner-question {
+    animation: none !important;
+  }
+}

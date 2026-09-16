@@ -1,6 +1,24 @@
 {
   "rules": {
     ".read": false,
-    ".write": false
+    ".write": false,
+    "responses": {
+      ".read": "auth != null && auth.token.email == 'admin@unknown-world.app'",
+      "$responseId": {
+        ".write": "auth != null && auth.token.email == 'admin@unknown-world.app' || (!data.exists() && newData.exists())",
+        ".validate": "newData.hasChildren(['nickname','question','createdAt','winner']) && newData.child('nickname').isString() && newData.child('nickname').val().length > 0 && newData.child('nickname').val().length <= 10 && newData.child('question').isString() && newData.child('question').val().length > 0 && newData.child('question').val().length <= 20 && newData.child('createdAt').isNumber() && newData.child('winner').isBoolean() && (!newData.hasChild('isTest') || (auth != null && auth.token.email == 'admin@unknown-world.app' && newData.child('isTest').val() == true))"
+      }
+    },
+    "publicResponses": {
+      ".read": true,
+      "$responseId": {
+        ".write": "auth != null && auth.token.email == 'admin@unknown-world.app' || (!data.exists() && newData.exists())",
+        ".validate": "newData.hasChildren(['question','createdAt','winner']) && newData.child('question').isString() && newData.child('question').val().length > 0 && newData.child('question').val().length <= 20 && newData.child('createdAt').isNumber() && newData.child('winner').isBoolean() && (!newData.hasChild('isTest') || (auth != null && auth.token.email == 'admin@unknown-world.app' && newData.child('isTest').val() == true))"
+      }
+    },
+    "displayState": {
+      ".read": true,
+      ".write": "auth != null && auth.token.email == 'admin@unknown-world.app'"
+    }
   }
 }

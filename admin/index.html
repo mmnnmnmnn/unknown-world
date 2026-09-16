@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>미지의 세계 — 관리자</title>
+  <link rel="stylesheet" href="./admin.css?v=admin-v1" />
+</head>
+<body>
+  <main id="adminApp" class="admin-app">
+    <section id="loginView" class="login-view">
+      <form id="loginForm" class="login-card" novalidate>
+        <p class="eyebrow">UNKNOWN WORLD</p>
+        <h1>관리자 로그인</h1>
+        <p class="login-help">관리자 비밀번호를 입력하세요.</p>
+        <label class="field-label" for="passwordInput">비밀번호</label>
+        <input
+          id="passwordInput"
+          class="text-input"
+          type="password"
+          autocomplete="current-password"
+          required
+        />
+        <button id="loginButton" class="primary-button" type="submit">로그인</button>
+        <p id="loginMessage" class="form-message" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <section id="dashboardView" class="dashboard-view" hidden>
+      <header class="admin-header">
+        <div>
+          <p class="eyebrow">UNKNOWN WORLD · ADMIN</p>
+          <h1>질문 관리</h1>
+        </div>
+        <div class="header-actions">
+          <a class="ghost-link" href="../display/" target="_blank" rel="noopener">시각화 열기</a>
+          <button id="logoutButton" class="ghost-button" type="button">로그아웃</button>
+        </div>
+      </header>
+
+      <section class="stats-grid" aria-label="응답 통계">
+        <article class="stat-card">
+          <span>전체 응답</span>
+          <strong id="totalCount">0</strong>
+        </article>
+        <article class="stat-card">
+          <span>실제 응답</span>
+          <strong id="realCount">0</strong>
+        </article>
+        <article class="stat-card">
+          <span>테스트</span>
+          <strong id="testCount">0</strong>
+        </article>
+        <article class="stat-card">
+          <span>당첨 이력</span>
+          <strong id="winnerCount">0</strong>
+        </article>
+      </section>
+
+      <section class="admin-grid">
+        <div class="responses-panel panel">
+          <div class="panel-header">
+            <div>
+              <h2>응답 목록</h2>
+              <p id="listSummary">0개 응답</p>
+            </div>
+            <div class="filter-controls">
+              <select id="filterSelect" class="select-input" aria-label="응답 필터">
+                <option value="all">전체</option>
+                <option value="real">실제 응답</option>
+                <option value="test">테스트 응답</option>
+                <option value="winner">당첨 이력</option>
+              </select>
+              <input
+                id="searchInput"
+                class="search-input"
+                type="search"
+                placeholder="닉네임·질문 검색"
+                autocomplete="off"
+              />
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table class="response-table">
+              <thead>
+                <tr>
+                  <th>구분</th>
+                  <th>닉네임</th>
+                  <th>질문</th>
+                  <th>제출 시각</th>
+                  <th>당첨</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="responseTbody"></tbody>
+            </table>
+            <div id="emptyRows" class="empty-rows" hidden>표시할 응답이 없습니다.</div>
+          </div>
+        </div>
+
+        <aside class="control-column">
+          <section class="panel control-card">
+            <div class="panel-header compact">
+              <div>
+                <h2>테스트 데이터</h2>
+                <p>시각화 밀도와 배치를 빠르게 확인합니다.</p>
+              </div>
+            </div>
+            <div class="button-grid">
+              <button class="secondary-button test-generate" data-count="10" type="button">10개 생성</button>
+              <button class="secondary-button test-generate" data-count="50" type="button">50개 생성</button>
+              <button class="secondary-button test-generate" data-count="100" type="button">100개 생성</button>
+            </div>
+            <button id="deleteTestsButton" class="outline-danger-button full-button" type="button">
+              테스트 데이터만 삭제
+            </button>
+            <p id="testMessage" class="small-message" aria-live="polite"></p>
+          </section>
+
+          <section class="panel control-card">
+            <div class="panel-header compact">
+              <div>
+                <h2>추첨</h2>
+                <p>대형 화면에는 질문만 표시됩니다.</p>
+              </div>
+            </div>
+
+            <label class="check-row">
+              <input id="includeTestsCheckbox" type="checkbox" />
+              <span>테스트 응답도 추첨 대상에 포함</span>
+            </label>
+
+            <button id="drawButton" class="draw-button full-button" type="button">질문 추첨</button>
+
+            <div id="currentWinnerCard" class="winner-card" hidden>
+              <span class="winner-label">현재 추첨 결과</span>
+              <strong id="currentWinnerQuestion"></strong>
+              <p id="currentWinnerNickname"></p>
+              <button id="clearWinnerButton" class="secondary-button full-button" type="button">
+                시각화 즉시 복귀
+              </button>
+            </div>
+
+            <button id="resetWinnersButton" class="ghost-button full-button" type="button">
+              당첨 이력 초기화
+            </button>
+            <p id="drawMessage" class="small-message" aria-live="polite"></p>
+          </section>
+
+          <section class="panel control-card danger-card">
+            <div class="panel-header compact">
+              <div>
+                <h2>전체 데이터</h2>
+                <p>실제 응답까지 모두 삭제합니다.</p>
+              </div>
+            </div>
+            <button id="deleteAllButton" class="danger-button full-button" type="button">
+              전체 응답 삭제
+            </button>
+            <p id="dangerMessage" class="small-message" aria-live="polite"></p>
+          </section>
+        </aside>
+      </section>
+
+      <footer class="admin-footer">
+        <span id="connectionText">Firebase 연결 확인 중</span>
+        <span id="authIdentity"></span>
+      </footer>
+    </section>
+  </main>
+
+  <script type="module" src="./admin.js?v=admin-v1"></script>
+</body>
+</html>
