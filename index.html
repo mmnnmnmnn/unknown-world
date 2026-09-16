@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="color-scheme" content="dark" />
   <title>데이터 너머, 미지의 세계</title>
-  <link rel="stylesheet" href="./css/common.css?v=clean-v1" />
+  <link rel="stylesheet" href="./css/common.css?v=clean-v2-scene5" />
 </head>
 <body class="mobile-page">
   <main id="mobileApp" class="mobile-app">
@@ -169,6 +169,42 @@
       </div>
     </section>
 
+
+
+    <!-- Scene 5 — 아직 오지 않은 미래 -->
+    <section id="scene5Screen" class="app-screen scene5-screen" hidden aria-label="아직 오지 않은 미래 애니메이션">
+      <div id="scene5Viewport" class="scene5-viewport">
+
+        <img
+          id="futureFallback"
+          class="scene5-media scene5-fallback"
+          src="./assets/scene05-future/future-fallback.jpg"
+          alt=""
+          draggable="false"
+        />
+
+        <video
+          id="futureTimelapse"
+          class="scene5-media scene5-video"
+          src="./assets/scene05-future/future-timelapse.mp4"
+          poster="./assets/scene05-future/future-fallback.jpg"
+          muted
+          playsinline
+          preload="auto"
+          aria-hidden="true"
+        ></video>
+
+        <div id="scene5Vignette" class="scene5-vignette" aria-hidden="true"></div>
+        <div id="scene5TransitionVeil" class="scene5-transition-veil" aria-hidden="true"></div>
+
+        <div id="scene5Title" class="scene5-title" aria-hidden="true">
+          아직 오지 않은 미래.
+        </div>
+
+        <div class="scene-debug-badge">SCENE 5 · CLEAN V2</div>
+      </div>
+    </section>
+
     <section id="scene14Screen" class="app-screen form-screen" hidden>
       <div class="form-shell">
         <p class="form-kicker">당신은 무엇이 궁금한가요?</p>
@@ -208,6 +244,6 @@
 
   </main>
 
-  <script type="module" src="./js/mobile.js?v=clean-v1"></script>
+  <script type="module" src="./js/mobile.js?v=clean-v2-scene5"></script>
 </body>
 </html>

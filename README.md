@@ -1,19 +1,30 @@
-# unknown-world — clean build v1
+# unknown-world — clean build v2 / Scene 5
 
-기준 기능: Scene 1~4의 v23 확정 동작 + UnTaza WOFF2 CSS 임베드 방식.
+기준 기능: clean build v1의 Scene 1~4 + UnTaza + 새 Scene 5.
 
-## 이번 clean build에서 한 일
-- 활성 모바일 JS를 `js/mobile.js` 하나로 통합했습니다.
-- 과거 버전 JS(`mobile-scene4-v15/v17/v20/v22/v23.js`)는 배포본에서 제거했습니다.
-- 미사용 Scene 1 asset(`globe.png`, `moon.png`, `propulsion-beam.png`)을 제거했습니다.
-- 미사용 Scene 2 이전 중간은하 이미지(`galaxy-closeup-transition.png`)를 제거했습니다.
-- 과거 폰트 파일과 폰트 테스트 페이지를 제거했습니다.
-- 과거 버전 README 파일을 제거했습니다.
-- Scene 3 고해상도 은하단 이미지는 포함하지 않았습니다.
-- `index.html`의 CSS/JS cache-busting 값을 `clean-v1`로 통일했습니다.
+## Scene 5
+- 문구: `아직 오지 않은 미래.`
+- 영상: `assets/scene05-future/future-timelapse.mp4`
+- 영상 길이: 약 3.04초 / 400×736 / H.264
+- 영상은 반복하지 않고 한 번 재생한 뒤 마지막 프레임에서 멈춥니다.
+- 영상 재생 실패 시 `future-fallback.jpg`로 자동 대체합니다.
 
-## 중요
-애니메이션 로직 자체는 v23의 활성 JS를 그대로 `js/mobile.js`로 복사했습니다.
-즉 clean build는 기능 변경이 아니라 파일 구조/배포 구조 정리입니다.
+## Scene 4 → 5 전환
+- 총 2.2초
+- Scene 3 → 4의 1.4초 전환보다 길게 설정
+- Scene 4가 왼쪽으로 밀리며 blur + darkening
+- Scene 5가 오른쪽에서 들어오며 blur → sharp
+- 중간에 어두운 이동 띠를 짧게 사용해 두 장면을 연결
 
-UnTaza 폰트는 현재 정상 동작이 확인된 방식을 유지하기 위해 `css/common.css` 내부 WOFF2 data URI로 임베드되어 있습니다.
+## Scene 5 타임라인
+- 0.00~2.20s: Scene 4 → 5 전환 + 타임랩스 재생
+- 약 3.04s: 타임랩스 재생 종료, 마지막 프레임 유지
+- 3.20~4.00s: `아직 오지 않은 미래.` 등장
+- 4.00~7.40s: 문구 완전 표시 3.4초
+- 7.40s: 현재 개발 단계에서는 Scene 14 입력 화면으로 임시 이동
+
+## 유지된 기능
+- Scene 1~4 clean build v1 동작 유지
+- Scene 3 저해상도 은하단 롤백 유지
+- UnTaza WOFF2 CSS 임베드 유지
+- Firebase 및 제출 기능 유지

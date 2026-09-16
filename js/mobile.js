@@ -57,6 +57,9 @@ const SCENE4_ASSETS = [
   "./assets/shared/whale.png"
 ];
 
+const SCENE5_VIDEO_SRC = "./assets/scene05-future/future-timelapse.mp4";
+const SCENE5_FALLBACK_SRC = "./assets/scene05-future/future-fallback.jpg";
+
 const SCENE1_ASSETS = [
   "./assets/scene01-space/star-chart-bg.png",
   "./assets/scene01-space/globe-full-v4.png",
@@ -283,6 +286,24 @@ const SCENE4_TIMELINE = {
 
 const SCENE4_END = SCENE4_TIMELINE.preScene5HoldEnd;
 
+
+/* =======================================================
+   Scene 5 — 아직 오지 않은 미래
+   -------------------------------------------------------
+   0.0~2.2s   : Scene 4 → Scene 5 우측 슬라이드 + blur 전환
+   0.0~3.04s  : 미래 타임랩스 1회 재생 (반복 없음)
+   3.20~4.00s : "아직 오지 않은 미래." blur → sharp
+   4.00~7.40s : 문구 완전 표시 3.4초
+======================================================= */
+const SCENE5_TIMELINE = {
+  transitionEnd: 2200,
+  titleStart: 3200,
+  titleReady: 4000,
+  end: 7400
+};
+
+const SCENE5_END = SCENE5_TIMELINE.end;
+
 // deepsea-bg.png 원본 비율: 793 × 1983
 const DEEPSEA_BG_ASPECT = 1983 / 793;
 const SCENE4_ASCEND_FINAL_PROGRESS = 0.48;
@@ -296,6 +317,7 @@ const startScreen = document.querySelector("#startScreen");
 const scene1Screen = document.querySelector("#scene1Screen");
 const scene23Screen = document.querySelector("#scene23Screen");
 const scene4Screen = document.querySelector("#scene4Screen");
+const scene5Screen = document.querySelector("#scene5Screen");
 const scene14Screen = document.querySelector("#scene14Screen");
 
 const scene23Viewport = document.querySelector("#scene23Viewport");
@@ -313,6 +335,12 @@ const scene4Whale = document.querySelector("#scene4Whale");
 const scene4Squid = document.querySelector("#scene4Squid");
 const scene4Corridor = document.querySelector("#scene4Corridor");
 const scene4Title = document.querySelector("#scene4Title");
+
+const scene5Viewport = document.querySelector("#scene5Viewport");
+const futureTimelapse = document.querySelector("#futureTimelapse");
+const futureFallback = document.querySelector("#futureFallback");
+const scene5TransitionVeil = document.querySelector("#scene5TransitionVeil");
+const scene5Title = document.querySelector("#scene5Title");
 
 const enterButton = document.querySelector("#enterButton");
 const loadStatus = document.querySelector("#loadStatus");
@@ -371,6 +399,14 @@ let scene4LoadingPromise = null;
 let scene4RafId = 0;
 let scene4Running = false;
 let scene4StartTime = 0;
+
+let scene5Ready = false;
+let scene5LoadingPromise = null;
+let scene5RafId = 0;
+let scene5Running = false;
+let scene5StartTime = 0;
+let scene5UseFallback = false;
+let scene5VideoReady = false;
 
 /* -------------------------------------------------------
    Util
@@ -459,6 +495,7 @@ function showOnly(screen) {
   scene1Screen.hidden = screen !== "scene1";
   scene23Screen.hidden = screen !== "scene23";
   scene4Screen.hidden = screen !== "scene4";
+  scene5Screen.hidden = screen !== "scene5";
   scene14Screen.hidden = screen !== "scene14";
 }
 
@@ -466,6 +503,7 @@ function renderStartScreen() {
   stopScene1();
   stopScene23();
   stopScene4();
+  stopScene5();
   revisitNotice.hidden = !isCompletedBrowser();
   loadStatus.textContent = scene1Ready ? "준비 완료" : "장면을 준비하고 있습니다…";
   showOnly("start");
@@ -475,6 +513,7 @@ function renderScene14() {
   stopScene1();
   stopScene23();
   stopScene4();
+  stopScene5();
   showOnly("scene14");
 
   if (isCompletedBrowser()) {
@@ -592,6 +631,68 @@ function preloadScene4(force = false) {
     });
 
   return scene4LoadingPromise;
+}
+
+
+function preloadVideoElement(video, src, timeoutMs = 8000) {
+  return new Promise((resolve) => {
+    let settled = false;
+    let timeoutId = 0;
+
+    const finish = (ok) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeoutId);
+      video.removeEventListener("loadeddata", onReady);
+      video.removeEventListener("canplay", onReady);
+      video.removeEventListener("error", onError);
+      resolve({ src, ok });
+    };
+
+    const onReady = () => finish(true);
+    const onError = () => finish(false);
+
+    if (video.readyState >= 2) {
+      finish(true);
+      return;
+    }
+
+    video.addEventListener("loadeddata", onReady, { once: true });
+    video.addEventListener("canplay", onReady, { once: true });
+    video.addEventListener("error", onError, { once: true });
+
+    if (video.getAttribute("src") !== src) {
+      video.src = src;
+    }
+    video.load();
+
+    timeoutId = window.setTimeout(() => finish(false), timeoutMs);
+  });
+}
+
+function preloadScene5(force = false) {
+  if (scene5LoadingPromise && !force) return scene5LoadingPromise;
+
+  scene5LoadingPromise = Promise.all([
+    preloadVideoElement(futureTimelapse, SCENE5_VIDEO_SRC),
+    preloadImage(SCENE5_FALLBACK_SRC)
+  ]).then(([videoResult, fallbackResult]) => {
+    scene5VideoReady = videoResult.ok;
+    scene5UseFallback = !scene5VideoReady;
+    scene5Ready = scene5VideoReady || fallbackResult.ok;
+
+    if (!videoResult.ok) {
+      console.warn("Scene 5 동영상 로딩 실패 — fallback 이미지 사용");
+    }
+
+    if (!scene5Ready) {
+      console.error("Scene 5 동영상과 fallback 이미지 모두 로딩 실패");
+    }
+
+    return scene5Ready;
+  });
+
+  return scene5LoadingPromise;
 }
 
 /* -------------------------------------------------------
@@ -1715,9 +1816,7 @@ function scene4Loop(now, token) {
   if (elapsed >= SCENE4_END) {
     scene4Running = false;
 
-    // 현재 개발 단계에서는 Scene 4 완료 후
-    // Scene 5 대신 임시로 입력 화면으로 이동.
-    renderScene14();
+    playScene5();
     return;
   }
 
@@ -1743,6 +1842,9 @@ async function playScene4() {
 
   if (token !== activeSceneToken) return;
 
+  // Scene 4가 재생되는 동안 Scene 5 동영상을 미리 준비해 전환 지연을 줄임.
+  preloadScene5();
+
   resetScene4();
 
   // Scene 3의 마지막 프레임을 그대로 남겨둔 채
@@ -1754,6 +1856,176 @@ async function playScene4() {
 
   scene4RafId = requestAnimationFrame(
     (now) => scene4Loop(now, token)
+  );
+}
+
+
+/* -------------------------------------------------------
+   Scene 5 — 아직 오지 않은 미래
+------------------------------------------------------- */
+function resetScene5() {
+  scene5Viewport.style.opacity = "0";
+  scene5Viewport.style.transform = "translate3d(100%, 0, 0)";
+  scene5Viewport.style.filter = "blur(12px) brightness(0.64)";
+
+  scene5TransitionVeil.style.opacity = "0";
+  scene5TransitionVeil.style.transform = "translate3d(25%, 0, 0) skewX(-7deg)";
+
+  scene5Title.style.opacity = "0";
+  scene5Title.style.filter = "blur(8px)";
+  scene5Title.style.transform = "translate(-50%, calc(-50% + 10px))";
+
+  futureFallback.style.opacity = scene5UseFallback ? "1" : "0";
+  futureTimelapse.style.opacity = scene5UseFallback ? "0" : "1";
+
+  futureTimelapse.pause();
+  futureTimelapse.playbackRate = 1;
+  try {
+    futureTimelapse.currentTime = 0;
+  } catch {
+    // 일부 브라우저는 metadata 로드 전 currentTime 설정을 거부할 수 있음.
+  }
+}
+
+function renderScene5Transition(time) {
+  const p = easeSmooth(
+    segmentProgress(time, 0, SCENE5_TIMELINE.transitionEnd)
+  );
+
+  // Scene 4는 왼쪽으로 천천히 밀리며 흐려지고 어두워짐.
+  scene4Viewport.style.transform =
+    `translate3d(${lerp(0, -34, p)}%, 0, 0)`;
+  scene4Viewport.style.filter =
+    `blur(${lerp(0, 8, p)}px) brightness(${lerp(1, 0.58, p)})`;
+  scene4Viewport.style.opacity = String(lerp(1, 0.20, p));
+
+  // Scene 5는 오른쪽에서 들어오며 blur → sharp.
+  scene5Viewport.style.transform =
+    `translate3d(${lerp(100, 0, p)}%, 0, 0)`;
+  scene5Viewport.style.filter =
+    `blur(${lerp(12, 0, p)}px) brightness(${lerp(0.64, 1, p)})`;
+  scene5Viewport.style.opacity = String(lerp(0.45, 1, p));
+
+  // 두 장면 사이를 지나가는 어두운 띠. 평면적인 검정 화면 대신 연결감을 준다.
+  const veilOpacity = Math.sin(Math.PI * clamp(p)) * 0.72;
+  scene5TransitionVeil.style.opacity = String(veilOpacity);
+  scene5TransitionVeil.style.transform =
+    `translate3d(${lerp(28, -20, p)}%, 0, 0) skewX(-7deg)`;
+}
+
+function renderScene5(time) {
+  if (time <= SCENE5_TIMELINE.transitionEnd) {
+    renderScene5Transition(time);
+  } else {
+    scene5Viewport.style.transform = "translate3d(0, 0, 0)";
+    scene5Viewport.style.filter = "blur(0px) brightness(1)";
+    scene5Viewport.style.opacity = "1";
+    scene5TransitionVeil.style.opacity = "0";
+  }
+
+  const titleP = easeSmooth(
+    segmentProgress(
+      time,
+      SCENE5_TIMELINE.titleStart,
+      SCENE5_TIMELINE.titleReady
+    )
+  );
+
+  scene5Title.style.opacity = String(titleP);
+  scene5Title.style.filter = `blur(${lerp(8, 0, titleP)}px)`;
+  scene5Title.style.transform =
+    `translate(-50%, calc(-50% + ${lerp(10, 0, titleP)}px))`;
+}
+
+function stopScene5() {
+  scene5Running = false;
+
+  if (scene5RafId) {
+    cancelAnimationFrame(scene5RafId);
+  }
+
+  scene5RafId = 0;
+  futureTimelapse.pause();
+}
+
+function scene5Loop(now, token) {
+  if (!scene5Running || token !== activeSceneToken) return;
+
+  const elapsed = now - scene5StartTime;
+  const time = Math.min(elapsed, SCENE5_END);
+
+  renderScene5(time);
+
+  // 2.2초 전환이 끝나면 Scene 4를 숨기고 스타일을 원복해 replay에 대비.
+  if (
+    time >= SCENE5_TIMELINE.transitionEnd &&
+    !scene4Screen.hidden
+  ) {
+    scene4Screen.hidden = true;
+    scene4Viewport.style.transform = "translate3d(0, 0, 0)";
+    scene4Viewport.style.filter = "none";
+    scene4Viewport.style.opacity = "1";
+  }
+
+  if (elapsed >= SCENE5_END) {
+    scene5Running = false;
+    futureTimelapse.pause();
+
+    // 현재 개발 단계에서는 Scene 6~13 구축 전이므로
+    // Scene 5 완료 후 입력 화면으로 임시 이동.
+    renderScene14();
+    return;
+  }
+
+  scene5RafId = requestAnimationFrame(
+    (nextNow) => scene5Loop(nextNow, token)
+  );
+}
+
+async function playScene5() {
+  stopScene5();
+
+  const token = activeSceneToken;
+
+  // 모바일 브라우저가 초기 preload를 보류했을 수 있으므로,
+  // 실제 재생 직전에 동영상 로딩을 한 번 더 확인한다.
+  if (!scene5Ready || !scene5VideoReady) {
+    const ready = await preloadScene5(true);
+
+    if (!ready) {
+      console.error("Scene 5 핵심 에셋을 불러오지 못했습니다.");
+      renderScene14();
+      return;
+    }
+  }
+
+  if (token !== activeSceneToken) return;
+
+  resetScene5();
+  scene5Screen.hidden = false;
+
+  // 타임랩스는 장면 시작과 동시에 한 번만 재생.
+  // 3.04초짜리 원본을 반복하지 않고 마지막 프레임에서 멈춘다.
+  if (!scene5UseFallback) {
+    try {
+      futureTimelapse.currentTime = 0;
+      await futureTimelapse.play();
+    } catch (error) {
+      console.warn("Scene 5 동영상 재생 실패 — fallback 이미지 사용", error);
+      scene5UseFallback = true;
+      futureTimelapse.pause();
+      futureTimelapse.style.opacity = "0";
+      futureFallback.style.opacity = "1";
+    }
+  }
+
+  if (token !== activeSceneToken) return;
+
+  scene5Running = true;
+  scene5StartTime = performance.now();
+
+  scene5RafId = requestAnimationFrame(
+    (now) => scene5Loop(now, token)
   );
 }
 
@@ -1880,7 +2152,7 @@ async function playScene1() {
 ------------------------------------------------------- */
 document.addEventListener("visibilitychange", () => {
   // requestAnimationFrame은 백그라운드 탭에서 자연스럽게 정지합니다.
-  // Scene 1 / Scene 2-3 / Scene 4 모두 절대시간 기반이므로
+  // Scene 1 / Scene 2-3 / Scene 4 / Scene 5 모두 절대시간 기반이므로
   // 별도 애니메이션 객체 동기화가 필요하지 않습니다.
 });
 
@@ -1983,6 +2255,7 @@ enterButton.addEventListener("click", async () => {
   // Scene 1 재생 중 이후 장면 에셋도 미리 준비
   preloadScene23();
   preloadScene4();
+  preloadScene5();
 
   if (sceneLoading) sceneLoading.hidden = true;
   enterButton.classList.remove("is-loading");
@@ -2004,3 +2277,4 @@ renderStartScreen();
 preloadScene1();
 preloadScene23();
 preloadScene4();
+preloadScene5();

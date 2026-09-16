@@ -625,3 +625,115 @@ button { -webkit-tap-highlight-color: transparent; }
       0 30px 90px rgba(0, 0, 0, 0.55);
   }
 }
+
+
+/* -------------------------------------------------------
+   Scene 5 — 아직 오지 않은 미래
+   Scene 4 → 5는 Scene 3 → 4보다 길게(2.2초) 전환한다.
+------------------------------------------------------- */
+.scene5-screen {
+  position: fixed;
+  z-index: 60;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: #03070d;
+}
+
+.scene5-viewport {
+  position: relative;
+  overflow: hidden;
+  width: min(100vw, calc(100dvh * var(--scene-ratio)));
+  height: min(100dvh, calc(100vw / var(--scene-ratio)));
+  max-width: 100vw;
+  max-height: 100dvh;
+  background: #040810;
+  isolation: isolate;
+  opacity: 0;
+  transform: translate3d(100%, 0, 0);
+  filter: blur(12px) brightness(0.64);
+  will-change: transform, opacity, filter;
+  backface-visibility: hidden;
+}
+
+.scene5-media {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+  pointer-events: none;
+  backface-visibility: hidden;
+}
+
+.scene5-video {
+  opacity: 1;
+}
+
+.scene5-fallback {
+  opacity: 0;
+}
+
+.scene5-vignette {
+  position: absolute;
+  z-index: 5;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 43%, transparent 0 38%, rgba(2, 5, 10, 0.12) 67%, rgba(1, 3, 8, 0.48) 100%),
+    linear-gradient(to bottom, rgba(3, 7, 14, 0.04), rgba(2, 5, 10, 0.18));
+}
+
+.scene5-transition-veil {
+  position: absolute;
+  z-index: 16;
+  inset: -14% -40%;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate3d(25%, 0, 0) skewX(-7deg);
+  will-change: transform, opacity;
+  background: linear-gradient(
+    90deg,
+    transparent 24%,
+    rgba(4, 10, 18, 0.10) 38%,
+    rgba(10, 19, 30, 0.40) 50%,
+    rgba(14, 24, 36, 0.18) 62%,
+    transparent 78%
+  );
+}
+
+.scene5-title {
+  position: absolute;
+  z-index: 24;
+  left: 50%;
+  top: 50%;
+  width: min(88%, 520px);
+  text-align: center;
+  color: rgba(248, 243, 232, 0.97);
+  font-size: clamp(28px, 7vw, 42px);
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  text-shadow:
+    0 2px 18px rgba(0, 0, 0, 0.68),
+    0 0 24px rgba(236, 226, 197, 0.10);
+  opacity: 0;
+  filter: blur(8px);
+  transform: translate(-50%, calc(-50% + 10px));
+  will-change: opacity, filter, transform;
+  pointer-events: none;
+}
+
+@media (min-width: 760px) {
+  .scene5-screen {
+    background: #02050a;
+  }
+
+  .scene5-viewport {
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.04),
+      0 30px 90px rgba(0, 0, 0, 0.55);
+  }
+}
