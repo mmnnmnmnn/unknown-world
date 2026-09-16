@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="color-scheme" content="dark" />
   <title>데이터 너머, 미지의 세계</title>
-  <link rel="stylesheet" href="./css/common.css?v=clean-v7-scene5-fallbackfix" />
+  <link rel="stylesheet" href="./css/common.css?v=clean-v8-scene6-14" />
 </head>
 <body class="mobile-page">
   <main id="mobileApp" class="mobile-app">
@@ -201,27 +201,87 @@
           아직 오지 않은 미래.
         </div>
 
-        <div class="scene-debug-badge">SCENE 5 · CLEAN V7</div>
+        <div class="scene-debug-badge">SCENE 5 · CLEAN V8</div>
+      </div>
+    </section>
+
+    <!-- Scene 6~13 — 질문의 세계 -->
+    <section id="scene6Screen" class="app-screen scene6-screen" hidden aria-label="질문 시퀀스 애니메이션">
+      <div id="scene6Viewport" class="scene6-viewport">
+        <img class="scene6-bg" src="./assets/scene06-14/bg-teal.png" alt="" draggable="false" />
+        <div id="scene6Corridor" class="scene6-corridor" aria-hidden="true"></div>
+
+        <div id="seqScene6" class="sequence-panel sequence-copy scene6-copy" aria-hidden="true">
+          <p>그곳에는 아직<br>우리가 발견하지 못한 것과<br>풀지 못한 질문들이<br>미지(未知)로 남아있습니다.</p>
+        </div>
+
+        <div id="seqScene7" class="sequence-panel sequence-copy scene7-copy" aria-hidden="true">
+          <p id="scene7Typing" class="typing-copy"><span id="scene7Line1"></span><span id="scene7Cursor1" class="typing-cursor">|</span><br><span id="scene7Line2"></span><span id="scene7Cursor2" class="typing-cursor">|</span></p>
+        </div>
+
+        <div id="seqScene8" class="sequence-panel sequence-visual scene8-visual" aria-hidden="true">
+          <img class="seq-image scene8-jupiter" src="./assets/scene01-space/planet-jupiter.png" alt="" draggable="false" />
+          <img class="seq-image scene8-whale" src="./assets/shared/whale.png" alt="" draggable="false" />
+          <p class="seq-caption scene8-caption">우주나 심해의 비밀?</p>
+        </div>
+
+        <div id="seqScene9" class="sequence-panel sequence-visual scene9-visual" aria-hidden="true">
+          <img class="seq-image scene9-planet" src="./assets/scene01-space/planet-green.png" alt="" draggable="false" />
+          <img class="seq-image scene9-animal" src="./assets/scene06-14/future-animal.png" alt="" draggable="false" />
+          <p class="seq-caption scene9-caption">미래 지구와 생명의 형태?</p>
+        </div>
+
+        <div id="seqScene10" class="sequence-panel sequence-visual scene10-visual" aria-hidden="true">
+          <img class="seq-image scene10-jesus" src="./assets/scene06-14/jesus.png" alt="" draggable="false" />
+          <img class="seq-image scene10-alien" src="./assets/scene06-14/alien.png" alt="" draggable="false" />
+          <p class="seq-caption scene10-caption">외계 생명체 혹은 신의 존재?</p>
+        </div>
+
+        <div id="seqScene11" class="sequence-panel sequence-copy scene11-copy" aria-hidden="true">
+          <p>과학적이거나 철학적인 것이<br>아니라도 좋습니다.</p>
+        </div>
+
+        <div id="seqScene12" class="sequence-panel sequence-copy scene12-copy" aria-hidden="true">
+          <p>거창하거나 진지한 것이<br>아니라도 좋습니다.</p>
+        </div>
+
+        <div id="seqScene13" class="sequence-panel scene13-copy" aria-hidden="true">
+          <p id="scene13Q1" class="scene13-question q1">내일의 점심 메뉴?</p>
+          <p id="scene13Q2" class="scene13-question q2">10년 후 나의 모습?</p>
+          <p id="scene13Q3" class="scene13-question q3">1년 뒤 삼성전자 주가?</p>
+        </div>
+
+        <div class="scene-debug-badge">SCENE 6–13 · CLEAN V8</div>
       </div>
     </section>
 
     <section id="scene14Screen" class="app-screen form-screen" hidden>
       <div class="form-shell">
-        <p class="form-kicker">당신은 무엇이 궁금한가요?</p>
-        <h1>내가 알고 싶은 것은</h1>
+        <img class="form-bg" src="./assets/scene06-14/bg-teal.png" alt="" draggable="false" />
 
-        <div id="scene14Warning" class="warning" hidden>
+        <div id="scene14Intro" class="scene14-intro" aria-hidden="true">
+          <p id="scene14Kicker" class="form-kicker">당신은 무엇이 궁금한가요?</p>
+          <h1 id="scene14Typing" class="scene14-typing"><span id="scene14TypedText"></span><span id="scene14Cursor" class="typing-cursor">|</span></h1>
+        </div>
+
+        <div id="scene14Warning" class="warning form-warning" hidden>
           Firebase 설정이 완료되지 않아 제출 기능을 사용할 수 없습니다.
         </div>
 
         <form id="responseForm" class="response-form" novalidate>
-          <label for="nickname">닉네임</label>
-          <input id="nickname" name="nickname" type="text" minlength="1" maxlength="10" autocomplete="off" required placeholder="1~10자" />
+          <div id="questionStage" class="question-stage">
+            <label class="sr-only" for="question">질문</label>
+            <div class="question-bracket">
+              <input id="question" name="question" type="text" minlength="1" maxlength="20" autocomplete="off" required aria-label="질문" />
+            </div>
+          </div>
 
-          <label for="question">질문</label>
-          <input id="question" name="question" type="text" minlength="1" maxlength="20" autocomplete="off" required placeholder="1~20자" />
+          <div class="nickname-stage">
+            <label for="nickname">닉네임</label>
+            <input id="nickname" name="nickname" type="text" minlength="1" maxlength="10" autocomplete="off" required placeholder="1~10자" />
+          </div>
 
-          <button id="submitButton" class="submit-button" type="submit">제출</button>
+          <button id="submitButton" class="submit-button" type="submit">질문 보내기</button>
           <p id="formMessage" class="form-message" role="status" aria-live="polite"></p>
         </form>
 
@@ -239,11 +299,12 @@
 
           <button id="replayButton" class="replay-button" type="button">애니메이션 다시 보기</button>
         </section>
+        <div class="scene-debug-badge">SCENE 14 · CLEAN V8</div>
       </div>
     </section>
 
   </main>
 
-  <script type="module" src="./js/mobile.js?v=clean-v7-scene5-fallbackfix"></script>
+  <script type="module" src="./js/mobile.js?v=clean-v8-scene6-14"></script>
 </body>
 </html>

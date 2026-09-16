@@ -60,6 +60,16 @@ const SCENE4_ASSETS = [
 const SCENE5_VIDEO_SRC = "./assets/scene05-future/future-timelapse.mp4";
 const SCENE5_FALLBACK_SRC = "./assets/scene05-future/future-fallback.jpg";
 
+const SCENE6_ASSETS = [
+  "./assets/scene06-14/bg-teal.png",
+  "./assets/scene06-14/future-animal.png",
+  "./assets/scene06-14/alien.png",
+  "./assets/scene06-14/jesus.png",
+  "./assets/scene01-space/planet-jupiter.png",
+  "./assets/scene01-space/planet-green.png",
+  "./assets/shared/whale.png"
+];
+
 const SCENE1_ASSETS = [
   "./assets/scene01-space/star-chart-bg.png",
   "./assets/scene01-space/globe-full-v4.png",
@@ -308,6 +318,47 @@ const SCENE5_TIMELINE = {
 
 const SCENE5_END = SCENE5_TIMELINE.end;
 
+/* =======================================================
+   Scene 6~13 — 질문 시퀀스
+   모든 일반 텍스트/이미지: 아래에서 위로 등장 → 위로 퇴장 + blur
+   Scene 7만 실제 타이핑 효과 사용
+======================================================= */
+const SCENE6_TIMELINE = {
+  transitionEnd: 1400,
+
+  scene6InStart: 1400, scene6InEnd: 2000, scene6OutStart: 4300, scene6OutEnd: 4900,
+
+  scene7Start: 4900,
+  scene7Line1Start: 5200, scene7Line1End: 6200,
+  scene7PauseEnd: 6800,
+  scene7Line2Start: 6800, scene7Line2End: 8300,
+  scene7OutStart: 9200, scene7OutEnd: 9800,
+
+  scene8InStart: 9800, scene8InEnd: 10400, scene8OutStart: 12400, scene8OutEnd: 13000,
+  scene9InStart: 13000, scene9InEnd: 13600, scene9OutStart: 15600, scene9OutEnd: 16200,
+  scene10InStart: 16200, scene10InEnd: 16800, scene10OutStart: 18800, scene10OutEnd: 19400,
+  scene11InStart: 19400, scene11InEnd: 20000, scene11OutStart: 21600, scene11OutEnd: 22200,
+  scene12InStart: 22200, scene12InEnd: 22800, scene12OutStart: 24400, scene12OutEnd: 25000,
+
+  scene13Q1Start: 25000, scene13Q1End: 25500,
+  scene13Q2Start: 25800, scene13Q2End: 26300,
+  scene13Q3Start: 26600, scene13Q3End: 27100,
+  scene13OutStart: 29000, scene13OutEnd: 29600,
+
+  end: 29600
+};
+
+const SCENE6_END = SCENE6_TIMELINE.end;
+
+const SCENE14_INTRO = {
+  kickerInStart: 0,
+  kickerInEnd: 600,
+  typingStart: 800,
+  typingEnd: 2000,
+  cursorHoldEnd: 2700,
+  formReady: 3000
+};
+
 // deepsea-bg.png 원본 비율: 793 × 1983
 const DEEPSEA_BG_ASPECT = 1983 / 793;
 const SCENE4_ASCEND_FINAL_PROGRESS = 0.48;
@@ -322,6 +373,7 @@ const scene1Screen = document.querySelector("#scene1Screen");
 const scene23Screen = document.querySelector("#scene23Screen");
 const scene4Screen = document.querySelector("#scene4Screen");
 const scene5Screen = document.querySelector("#scene5Screen");
+const scene6Screen = document.querySelector("#scene6Screen");
 const scene14Screen = document.querySelector("#scene14Screen");
 
 const scene23Viewport = document.querySelector("#scene23Viewport");
@@ -345,6 +397,30 @@ const futureTimelapse = document.querySelector("#futureTimelapse");
 const futureFallback = document.querySelector("#futureFallback");
 const scene5TransitionVeil = document.querySelector("#scene5TransitionVeil");
 const scene5Title = document.querySelector("#scene5Title");
+
+const scene6Viewport = document.querySelector("#scene6Viewport");
+const scene6Corridor = document.querySelector("#scene6Corridor");
+const seqScene6 = document.querySelector("#seqScene6");
+const seqScene7 = document.querySelector("#seqScene7");
+const seqScene8 = document.querySelector("#seqScene8");
+const seqScene9 = document.querySelector("#seqScene9");
+const seqScene10 = document.querySelector("#seqScene10");
+const seqScene11 = document.querySelector("#seqScene11");
+const seqScene12 = document.querySelector("#seqScene12");
+const seqScene13 = document.querySelector("#seqScene13");
+const scene7Line1 = document.querySelector("#scene7Line1");
+const scene7Line2 = document.querySelector("#scene7Line2");
+const scene7Cursor1 = document.querySelector("#scene7Cursor1");
+const scene7Cursor2 = document.querySelector("#scene7Cursor2");
+const scene13Q1 = document.querySelector("#scene13Q1");
+const scene13Q2 = document.querySelector("#scene13Q2");
+const scene13Q3 = document.querySelector("#scene13Q3");
+
+const scene14Intro = document.querySelector("#scene14Intro");
+const scene14Kicker = document.querySelector("#scene14Kicker");
+const scene14TypedText = document.querySelector("#scene14TypedText");
+const scene14Cursor = document.querySelector("#scene14Cursor");
+const questionStage = document.querySelector("#questionStage");
 
 const enterButton = document.querySelector("#enterButton");
 const loadStatus = document.querySelector("#loadStatus");
@@ -413,6 +489,16 @@ let scene5UseFallback = false;
 let scene5VideoReady = false;
 let scene5VideoStarted = false;
 let scene5VideoPlayCount = 0;
+
+let scene6Ready = false;
+let scene6LoadingPromise = null;
+let scene6RafId = 0;
+let scene6Running = false;
+let scene6StartTime = 0;
+
+let scene14IntroRafId = 0;
+let scene14IntroRunning = false;
+let scene14IntroStartTime = 0;
 
 /* -------------------------------------------------------
    Util
@@ -502,6 +588,7 @@ function showOnly(screen) {
   scene23Screen.hidden = screen !== "scene23";
   scene4Screen.hidden = screen !== "scene4";
   scene5Screen.hidden = screen !== "scene5";
+  scene6Screen.hidden = screen !== "scene6";
   scene14Screen.hidden = screen !== "scene14";
 }
 
@@ -510,9 +597,26 @@ function renderStartScreen() {
   stopScene23();
   stopScene4();
   stopScene5();
+  stopScene6();
+  stopScene14Intro();
   revisitNotice.hidden = !isCompletedBrowser();
   loadStatus.textContent = scene1Ready ? "준비 완료" : "장면을 준비하고 있습니다…";
   showOnly("start");
+}
+
+function prepareScene14Ready({ focusQuestion = false } = {}) {
+  scene14Kicker.style.opacity = "1";
+  scene14Kicker.style.filter = "blur(0px)";
+  scene14Kicker.style.transform = "translate(-50%, -50%)";
+  scene14TypedText.textContent = "내가 알고 싶은 것은";
+  scene14Cursor.style.display = "none";
+  form.classList.add("is-ready");
+
+  if (focusQuestion && !isCompletedBrowser()) {
+    window.setTimeout(() => {
+      try { questionInput.focus({ preventScroll: true }); } catch { questionInput.focus(); }
+    }, 80);
+  }
 }
 
 function renderScene14() {
@@ -520,20 +624,26 @@ function renderScene14() {
   stopScene23();
   stopScene4();
   stopScene5();
+  stopScene6();
+  stopScene14Intro();
   showOnly("scene14");
 
   if (isCompletedBrowser()) {
+    scene14Intro.hidden = true;
     showCompletedPanel("이미 참여가 완료된 브라우저입니다.");
   } else {
+    scene14Intro.hidden = false;
     completedState.hidden = true;
     form.hidden = false;
     formMessage.textContent = "";
     submitButton.disabled = !db;
+    prepareScene14Ready();
   }
 }
 
 function showCompletedPanel(title = "제출이 완료되었습니다.") {
   completedTitle.textContent = title;
+  scene14Intro.hidden = true;
   form.hidden = true;
   completedState.hidden = false;
   renderSubmissionSummary();
@@ -699,6 +809,24 @@ function preloadScene5(force = false) {
   });
 
   return scene5LoadingPromise;
+}
+
+function preloadScene6(force = false) {
+  if (scene6LoadingPromise && !force) return scene6LoadingPromise;
+
+  scene6LoadingPromise = Promise.all(SCENE6_ASSETS.map(preloadImage))
+    .then((results) => {
+      scene6Ready = results.every((item) => item.ok);
+      if (!scene6Ready) {
+        console.warn(
+          "Scene 6~13 일부 에셋 로딩 실패:",
+          results.filter((item) => !item.ok)
+        );
+      }
+      return scene6Ready;
+    });
+
+  return scene6LoadingPromise;
 }
 
 /* -------------------------------------------------------
@@ -2057,10 +2185,7 @@ function scene5Loop(now, token) {
   if (elapsed >= SCENE5_END) {
     scene5Running = false;
     futureTimelapse.pause();
-
-    // 현재 개발 단계에서는 Scene 6~13 구축 전이므로
-    // Scene 5 완료 후 입력 화면으로 임시 이동.
-    renderScene14();
+    playScene6Sequence();
     return;
   }
 
@@ -2088,6 +2213,9 @@ async function playScene5() {
 
   if (token !== activeSceneToken) return;
 
+  // Scene 5 재생 중 Scene 6~13 에셋을 미리 준비한다.
+  preloadScene6();
+
   resetScene5();
   scene5Screen.hidden = false;
 
@@ -2104,6 +2232,350 @@ async function playScene5() {
   );
 }
 
+
+
+/* -------------------------------------------------------
+   Scene 6~13 — 질문 시퀀스
+------------------------------------------------------- */
+function setPanelHidden(panel) {
+  panel.style.opacity = "0";
+  panel.style.filter = "blur(7px)";
+  panel.style.transform = "translate3d(0, 18px, 0)";
+}
+
+function resetScene6Sequence() {
+  scene6Screen.style.opacity = "1";
+  scene6Viewport.style.opacity = "0";
+  scene6Viewport.style.filter = "blur(14px) brightness(0.48)";
+  scene6Viewport.style.transform = "translate3d(0, 7vh, 0)";
+  scene6Corridor.style.opacity = "0";
+  scene6Corridor.style.transform = "translate3d(0, 3vh, 0) scale(1.03)";
+
+  [seqScene6, seqScene7, seqScene8, seqScene9, seqScene10, seqScene11, seqScene12, seqScene13]
+    .forEach(setPanelHidden);
+
+  scene7Line1.textContent = "";
+  scene7Line2.textContent = "";
+  scene7Cursor1.style.display = "inline-block";
+  scene7Cursor2.style.display = "none";
+
+  [scene13Q1, scene13Q2, scene13Q3].forEach((el) => {
+    el.style.opacity = "0";
+    el.style.filter = "blur(7px)";
+    el.style.transform = "translate3d(0, 16px, 0)";
+  });
+
+  // Scene 5 마지막 프레임을 전환 출발점으로 복구.
+  scene5Screen.style.opacity = "1";
+  scene5Screen.style.filter = "blur(0px) brightness(1)";
+  scene5Viewport.style.transform = "translate3d(0,0,0)";
+  scene5Viewport.style.filter = "blur(0px) brightness(1)";
+  scene5Title.style.opacity = "1";
+}
+
+function renderScene6Transition(time) {
+  const p = easeSmooth(segmentProgress(time, 0, SCENE6_TIMELINE.transitionEnd));
+  const oldExit = easeSmooth(segmentProgress(time, 0, 850));
+
+  // Scene 3→4와 동일한 방향감: 기존 장면은 위로 빠지고 새 장면이 아래에서 들어온다.
+  scene5Viewport.style.transform =
+    `translate3d(0, ${lerp(0, -18, oldExit)}vh, 0) scale(${lerp(1, 1.018, oldExit)})`;
+  scene5Screen.style.filter =
+    `blur(${lerp(0, 12, oldExit)}px) brightness(${lerp(1, 0.16, oldExit)})`;
+  scene5Screen.style.opacity = String(1 - oldExit);
+
+  const titleFade = easeSmooth(segmentProgress(time, 0, 360));
+  scene5Title.style.opacity = String(1 - titleFade);
+
+  let corridorOpacity;
+  if (time <= 760) {
+    corridorOpacity = lerp(0, 0.98, easeSmooth(segmentProgress(time, 120, 760)));
+  } else {
+    corridorOpacity = lerp(
+      0.98,
+      0,
+      easeSmooth(segmentProgress(time, 760, SCENE6_TIMELINE.transitionEnd))
+    );
+  }
+  scene6Corridor.style.opacity = String(clamp(corridorOpacity));
+  scene6Corridor.style.transform =
+    `translate3d(0, ${lerp(3, -2, p)}vh, 0) scale(${lerp(1.03, 1, p)})`;
+
+  const enter = easeSmooth(segmentProgress(time, 720, SCENE6_TIMELINE.transitionEnd));
+  scene6Viewport.style.opacity = String(enter);
+  scene6Viewport.style.filter =
+    `blur(${lerp(14, 0, enter)}px) brightness(${lerp(0.48, 1, enter)})`;
+  scene6Viewport.style.transform = `translate3d(0, ${lerp(7, 0, enter)}vh, 0)`;
+}
+
+function renderUpPanel(panel, time, inStart, inEnd, outStart, outEnd) {
+  const inP = easeSmooth(segmentProgress(time, inStart, inEnd));
+  const outP = easeSmooth(segmentProgress(time, outStart, outEnd));
+
+  if (time < inStart || time >= outEnd) {
+    setPanelHidden(panel);
+    return;
+  }
+
+  panel.style.opacity = String(clamp(inP * (1 - outP)));
+  panel.style.filter = `blur(${lerp(7, 0, inP) + lerp(0, 7, outP)}px)`;
+  panel.style.transform =
+    `translate3d(0, ${lerp(18, 0, inP) + lerp(0, -18, outP)}px, 0)`;
+}
+
+function typedSlice(text, progress) {
+  const chars = Array.from(text);
+  const count = Math.floor(clamp(progress) * chars.length);
+  return chars.slice(0, count).join("");
+}
+
+function renderScene7(time) {
+  const visible = time >= SCENE6_TIMELINE.scene7Start && time < SCENE6_TIMELINE.scene7OutEnd;
+  if (!visible) {
+    setPanelHidden(seqScene7);
+    return;
+  }
+
+  seqScene7.style.opacity = "1";
+  seqScene7.style.filter = "blur(0px)";
+  seqScene7.style.transform = "translate3d(0,0,0)";
+
+  const line1 = "당신이 알고 싶은";
+  const line2 = "미지의 세계는 어디인가요?";
+
+  const secondLinePhase = time >= SCENE6_TIMELINE.scene7Line2Start;
+  scene7Cursor1.style.display = secondLinePhase ? "none" : "inline-block";
+  scene7Cursor2.style.display = secondLinePhase ? "inline-block" : "none";
+
+  if (time < SCENE6_TIMELINE.scene7Line1Start) {
+    scene7Line1.textContent = "";
+    scene7Line2.textContent = "";
+  } else if (time <= SCENE6_TIMELINE.scene7Line1End) {
+    scene7Line1.textContent = typedSlice(
+      line1,
+      segmentProgress(time, SCENE6_TIMELINE.scene7Line1Start, SCENE6_TIMELINE.scene7Line1End)
+    );
+    scene7Line2.textContent = "";
+  } else if (time < SCENE6_TIMELINE.scene7Line2Start) {
+    scene7Line1.textContent = line1;
+    scene7Line2.textContent = "";
+  } else if (time <= SCENE6_TIMELINE.scene7Line2End) {
+    scene7Line1.textContent = line1;
+    scene7Line2.textContent = typedSlice(
+      line2,
+      segmentProgress(time, SCENE6_TIMELINE.scene7Line2Start, SCENE6_TIMELINE.scene7Line2End)
+    );
+  } else {
+    scene7Line1.textContent = line1;
+    scene7Line2.textContent = line2;
+  }
+
+  if (time >= SCENE6_TIMELINE.scene7OutStart) {
+    const outP = easeSmooth(
+      segmentProgress(time, SCENE6_TIMELINE.scene7OutStart, SCENE6_TIMELINE.scene7OutEnd)
+    );
+    seqScene7.style.opacity = String(1 - outP);
+    seqScene7.style.filter = `blur(${lerp(0, 7, outP)}px)`;
+    seqScene7.style.transform = `translate3d(0, ${lerp(0, -18, outP)}px, 0)`;
+  }
+}
+
+function renderScene13Question(el, time, start, end) {
+  const p = easeSmooth(segmentProgress(time, start, end));
+  const outP = easeSmooth(
+    segmentProgress(time, SCENE6_TIMELINE.scene13OutStart, SCENE6_TIMELINE.scene13OutEnd)
+  );
+  el.style.opacity = String(clamp(p * (1 - outP)));
+  el.style.filter = `blur(${lerp(7, 0, p) + lerp(0, 7, outP)}px)`;
+  el.style.transform =
+    `translate3d(0, ${lerp(16, 0, p) + lerp(0, -18, outP)}px, 0)`;
+}
+
+function renderScene6Sequence(time) {
+  if (time <= SCENE6_TIMELINE.transitionEnd) {
+    renderScene6Transition(time);
+  } else {
+    scene6Viewport.style.opacity = "1";
+    scene6Viewport.style.filter = "blur(0px) brightness(1)";
+    scene6Viewport.style.transform = "translate3d(0,0,0)";
+    scene6Corridor.style.opacity = "0";
+  }
+
+  renderUpPanel(
+    seqScene6, time,
+    SCENE6_TIMELINE.scene6InStart, SCENE6_TIMELINE.scene6InEnd,
+    SCENE6_TIMELINE.scene6OutStart, SCENE6_TIMELINE.scene6OutEnd
+  );
+
+  renderScene7(time);
+
+  renderUpPanel(
+    seqScene8, time,
+    SCENE6_TIMELINE.scene8InStart, SCENE6_TIMELINE.scene8InEnd,
+    SCENE6_TIMELINE.scene8OutStart, SCENE6_TIMELINE.scene8OutEnd
+  );
+  renderUpPanel(
+    seqScene9, time,
+    SCENE6_TIMELINE.scene9InStart, SCENE6_TIMELINE.scene9InEnd,
+    SCENE6_TIMELINE.scene9OutStart, SCENE6_TIMELINE.scene9OutEnd
+  );
+  renderUpPanel(
+    seqScene10, time,
+    SCENE6_TIMELINE.scene10InStart, SCENE6_TIMELINE.scene10InEnd,
+    SCENE6_TIMELINE.scene10OutStart, SCENE6_TIMELINE.scene10OutEnd
+  );
+  renderUpPanel(
+    seqScene11, time,
+    SCENE6_TIMELINE.scene11InStart, SCENE6_TIMELINE.scene11InEnd,
+    SCENE6_TIMELINE.scene11OutStart, SCENE6_TIMELINE.scene11OutEnd
+  );
+  renderUpPanel(
+    seqScene12, time,
+    SCENE6_TIMELINE.scene12InStart, SCENE6_TIMELINE.scene12InEnd,
+    SCENE6_TIMELINE.scene12OutStart, SCENE6_TIMELINE.scene12OutEnd
+  );
+
+  const scene13Visible = time >= SCENE6_TIMELINE.scene13Q1Start && time < SCENE6_TIMELINE.scene13OutEnd;
+  seqScene13.style.opacity = scene13Visible ? "1" : "0";
+  seqScene13.style.filter = "none";
+  seqScene13.style.transform = "none";
+  renderScene13Question(scene13Q1, time, SCENE6_TIMELINE.scene13Q1Start, SCENE6_TIMELINE.scene13Q1End);
+  renderScene13Question(scene13Q2, time, SCENE6_TIMELINE.scene13Q2Start, SCENE6_TIMELINE.scene13Q2End);
+  renderScene13Question(scene13Q3, time, SCENE6_TIMELINE.scene13Q3Start, SCENE6_TIMELINE.scene13Q3End);
+}
+
+function stopScene6() {
+  scene6Running = false;
+  if (scene6RafId) cancelAnimationFrame(scene6RafId);
+  scene6RafId = 0;
+}
+
+function scene6Loop(now, token) {
+  if (!scene6Running || token !== activeSceneToken) return;
+  const elapsed = now - scene6StartTime;
+  const time = Math.min(elapsed, SCENE6_END);
+  renderScene6Sequence(time);
+
+  if (time >= SCENE6_TIMELINE.transitionEnd && !scene5Screen.hidden) {
+    scene5Screen.hidden = true;
+    scene5Screen.style.opacity = "1";
+    scene5Screen.style.filter = "none";
+    scene5Viewport.style.transform = "translate3d(0,0,0)";
+    scene5Viewport.style.filter = "blur(0px) brightness(1)";
+  }
+
+  if (elapsed >= SCENE6_END) {
+    scene6Running = false;
+    playScene14Intro();
+    return;
+  }
+
+  scene6RafId = requestAnimationFrame((nextNow) => scene6Loop(nextNow, token));
+}
+
+async function playScene6Sequence() {
+  stopScene6();
+  const token = activeSceneToken;
+
+  if (!scene6Ready) {
+    const ready = await preloadScene6(true);
+    if (!ready) {
+      console.error("Scene 6~13 핵심 에셋을 불러오지 못했습니다.");
+      renderScene14();
+      return;
+    }
+  }
+  if (token !== activeSceneToken) return;
+
+  resetScene6Sequence();
+  scene6Screen.hidden = false;
+  scene6Running = true;
+  scene6StartTime = performance.now();
+  scene6RafId = requestAnimationFrame((now) => scene6Loop(now, token));
+}
+
+/* -------------------------------------------------------
+   Scene 14 — 실제 입력 화면 intro
+------------------------------------------------------- */
+function resetScene14Intro() {
+  scene14Intro.hidden = false;
+  scene14Kicker.style.opacity = "0";
+  scene14Kicker.style.filter = "blur(7px)";
+  scene14Kicker.style.transform = "translate(-50%, calc(-50% + 16px))";
+  scene14TypedText.textContent = "";
+  scene14Cursor.style.display = "inline-block";
+  form.classList.remove("is-ready");
+  completedState.hidden = true;
+  form.hidden = false;
+  formMessage.textContent = "";
+  submitButton.disabled = !db;
+}
+
+function renderScene14Intro(time) {
+  const kickerP = easeSmooth(
+    segmentProgress(time, SCENE14_INTRO.kickerInStart, SCENE14_INTRO.kickerInEnd)
+  );
+  scene14Kicker.style.opacity = String(kickerP);
+  scene14Kicker.style.filter = `blur(${lerp(7, 0, kickerP)}px)`;
+  scene14Kicker.style.transform =
+    `translate(-50%, calc(-50% + ${lerp(16, 0, kickerP)}px))`;
+
+  const phrase = "내가 알고 싶은 것은";
+  if (time < SCENE14_INTRO.typingStart) {
+    scene14TypedText.textContent = "";
+  } else if (time <= SCENE14_INTRO.typingEnd) {
+    scene14TypedText.textContent = typedSlice(
+      phrase,
+      segmentProgress(time, SCENE14_INTRO.typingStart, SCENE14_INTRO.typingEnd)
+    );
+  } else {
+    scene14TypedText.textContent = phrase;
+  }
+
+  if (time >= SCENE14_INTRO.cursorHoldEnd) {
+    scene14Cursor.style.display = "none";
+    form.classList.add("is-ready");
+  }
+}
+
+function stopScene14Intro() {
+  scene14IntroRunning = false;
+  if (scene14IntroRafId) cancelAnimationFrame(scene14IntroRafId);
+  scene14IntroRafId = 0;
+}
+
+function scene14IntroLoop(now, token) {
+  if (!scene14IntroRunning || token !== activeSceneToken) return;
+  const elapsed = now - scene14IntroStartTime;
+  renderScene14Intro(elapsed);
+
+  if (elapsed >= SCENE14_INTRO.formReady) {
+    scene14IntroRunning = false;
+    prepareScene14Ready({ focusQuestion: true });
+    return;
+  }
+
+  scene14IntroRafId = requestAnimationFrame((nextNow) => scene14IntroLoop(nextNow, token));
+}
+
+function playScene14Intro() {
+  stopScene14Intro();
+  stopScene6();
+  const token = activeSceneToken;
+
+  scene14Screen.hidden = false;
+  scene6Screen.hidden = true;
+
+  if (isCompletedBrowser()) {
+    renderScene14();
+    return;
+  }
+
+  resetScene14Intro();
+  scene14IntroRunning = true;
+  scene14IntroStartTime = performance.now();
+  scene14IntroRafId = requestAnimationFrame((now) => scene14IntroLoop(now, token));
+}
 
 function stopScene23() {
   scene23Running = false;
@@ -2227,7 +2699,7 @@ async function playScene1() {
 ------------------------------------------------------- */
 document.addEventListener("visibilitychange", () => {
   // requestAnimationFrame은 백그라운드 탭에서 자연스럽게 정지합니다.
-  // Scene 1 / Scene 2-3 / Scene 4 / Scene 5 모두 절대시간 기반이므로
+  // Scene 1 / Scene 2-3 / Scene 4 / Scene 5 / Scene 6~14 모두 절대시간 기반이므로
   // 별도 애니메이션 객체 동기화가 필요하지 않습니다.
 });
 
@@ -2331,6 +2803,7 @@ enterButton.addEventListener("click", async () => {
   preloadScene23();
   preloadScene4();
   preloadScene5();
+  preloadScene6();
 
   if (sceneLoading) sceneLoading.hidden = true;
   enterButton.classList.remove("is-loading");
@@ -2353,3 +2826,4 @@ preloadScene1();
 preloadScene23();
 preloadScene4();
 preloadScene5();
+preloadScene6();
