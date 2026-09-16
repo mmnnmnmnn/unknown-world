@@ -326,26 +326,28 @@ const SCENE5_END = SCENE5_TIMELINE.end;
 const SCENE6_TIMELINE = {
   transitionEnd: 1400,
 
-  scene6InStart: 1400, scene6InEnd: 2000, scene6OutStart: 4300, scene6OutEnd: 4900,
+  // Scene 6의 완전 표시 시간을 v8보다 0.5초 늘림.
+  scene6InStart: 1400, scene6InEnd: 2000, scene6OutStart: 4800, scene6OutEnd: 5400,
 
-  scene7Start: 4900,
-  scene7Line1Start: 5200, scene7Line1End: 6200,
-  scene7PauseEnd: 6800,
-  scene7Line2Start: 6800, scene7Line2End: 8300,
-  scene7OutStart: 9200, scene7OutEnd: 9800,
+  // 이후 장면은 모두 0.5초씩 뒤로 이동해 기존 개별 재생시간을 유지.
+  scene7Start: 5400,
+  scene7Line1Start: 5700, scene7Line1End: 6700,
+  scene7PauseEnd: 7300,
+  scene7Line2Start: 7300, scene7Line2End: 8800,
+  scene7OutStart: 9700, scene7OutEnd: 10300,
 
-  scene8InStart: 9800, scene8InEnd: 10400, scene8OutStart: 12400, scene8OutEnd: 13000,
-  scene9InStart: 13000, scene9InEnd: 13600, scene9OutStart: 15600, scene9OutEnd: 16200,
-  scene10InStart: 16200, scene10InEnd: 16800, scene10OutStart: 18800, scene10OutEnd: 19400,
-  scene11InStart: 19400, scene11InEnd: 20000, scene11OutStart: 21600, scene11OutEnd: 22200,
-  scene12InStart: 22200, scene12InEnd: 22800, scene12OutStart: 24400, scene12OutEnd: 25000,
+  scene8InStart: 10300, scene8InEnd: 10900, scene8OutStart: 12900, scene8OutEnd: 13500,
+  scene9InStart: 13500, scene9InEnd: 14100, scene9OutStart: 16100, scene9OutEnd: 16700,
+  scene10InStart: 16700, scene10InEnd: 17300, scene10OutStart: 19300, scene10OutEnd: 19900,
+  scene11InStart: 19900, scene11InEnd: 20500, scene11OutStart: 22100, scene11OutEnd: 22700,
+  scene12InStart: 22700, scene12InEnd: 23300, scene12OutStart: 24900, scene12OutEnd: 25500,
 
-  scene13Q1Start: 25000, scene13Q1End: 25500,
-  scene13Q2Start: 25800, scene13Q2End: 26300,
-  scene13Q3Start: 26600, scene13Q3End: 27100,
-  scene13OutStart: 29000, scene13OutEnd: 29600,
+  scene13Q1Start: 25500, scene13Q1End: 26000,
+  scene13Q2Start: 26300, scene13Q2End: 26800,
+  scene13Q3Start: 27100, scene13Q3End: 27600,
+  scene13OutStart: 29500, scene13OutEnd: 30100,
 
-  end: 29600
+  end: 30100
 };
 
 const SCENE6_END = SCENE6_TIMELINE.end;
@@ -399,6 +401,7 @@ const scene5TransitionVeil = document.querySelector("#scene5TransitionVeil");
 const scene5Title = document.querySelector("#scene5Title");
 
 const scene6Viewport = document.querySelector("#scene6Viewport");
+const scene6Bg = document.querySelector(".scene6-bg");
 const scene6Corridor = document.querySelector("#scene6Corridor");
 const seqScene6 = document.querySelector("#seqScene6");
 const seqScene7 = document.querySelector("#seqScene7");
@@ -2244,10 +2247,19 @@ function setPanelHidden(panel) {
 }
 
 function resetScene6Sequence() {
+  // Scene 5 마지막 프레임을 가리지 않도록 Scene 6의 외곽/viewport 배경은
+  // 전환 시작 시 완전히 투명하게 둔다. 배경 이미지만 후반부에 아래에서 등장한다.
   scene6Screen.style.opacity = "1";
-  scene6Viewport.style.opacity = "0";
-  scene6Viewport.style.filter = "blur(14px) brightness(0.48)";
-  scene6Viewport.style.transform = "translate3d(0, 7vh, 0)";
+  scene6Screen.style.background = "transparent";
+  scene6Viewport.style.opacity = "1";
+  scene6Viewport.style.background = "transparent";
+  scene6Viewport.style.filter = "none";
+  scene6Viewport.style.transform = "translate3d(0, 0, 0)";
+
+  scene6Bg.style.opacity = "0";
+  scene6Bg.style.filter = "blur(14px) brightness(0.48)";
+  scene6Bg.style.transform = "translate3d(0, 7vh, 0)";
+
   scene6Corridor.style.opacity = "0";
   scene6Corridor.style.transform = "translate3d(0, 3vh, 0) scale(1.03)";
 
@@ -2271,22 +2283,31 @@ function resetScene6Sequence() {
   scene5Viewport.style.transform = "translate3d(0,0,0)";
   scene5Viewport.style.filter = "blur(0px) brightness(1)";
   scene5Title.style.opacity = "1";
+  scene5Title.style.filter = "blur(0px)";
+  scene5Title.style.transform = "translate(-50%, -50%)";
 }
 
 function renderScene6Transition(time) {
   const p = easeSmooth(segmentProgress(time, 0, SCENE6_TIMELINE.transitionEnd));
   const oldExit = easeSmooth(segmentProgress(time, 0, 850));
 
-  // Scene 3→4와 동일한 방향감: 기존 장면은 위로 빠지고 새 장면이 아래에서 들어온다.
+  // Scene 3→4와 동일한 방식:
+  // Scene 5 마지막 프레임 자체가 먼저 위로 이동하면서 blur + darken + fade 된다.
+  // Scene 6의 불투명 배경은 이 단계에서 Scene 5를 미리 덮지 않는다.
   scene5Viewport.style.transform =
     `translate3d(0, ${lerp(0, -18, oldExit)}vh, 0) scale(${lerp(1, 1.018, oldExit)})`;
   scene5Screen.style.filter =
     `blur(${lerp(0, 12, oldExit)}px) brightness(${lerp(1, 0.16, oldExit)})`;
   scene5Screen.style.opacity = String(1 - oldExit);
 
-  const titleFade = easeSmooth(segmentProgress(time, 0, 360));
+  const titleFade = easeSmooth(segmentProgress(time, 0, 520));
   scene5Title.style.opacity = String(1 - titleFade);
+  scene5Title.style.filter = `blur(${lerp(0, 6, titleFade)}px)`;
+  scene5Title.style.transform =
+    `translate(-50%, calc(-50% + ${lerp(0, -12, titleFade)}px))`;
 
+  // Scene 5 위에 암흑 통로가 겹쳐지고,
+  // 후반부에는 청록 배경이 아래에서 blur → sharp로 등장한다.
   let corridorOpacity;
   if (time <= 760) {
     corridorOpacity = lerp(0, 0.98, easeSmooth(segmentProgress(time, 120, 760)));
@@ -2302,10 +2323,16 @@ function renderScene6Transition(time) {
     `translate3d(0, ${lerp(3, -2, p)}vh, 0) scale(${lerp(1.03, 1, p)})`;
 
   const enter = easeSmooth(segmentProgress(time, 720, SCENE6_TIMELINE.transitionEnd));
-  scene6Viewport.style.opacity = String(enter);
-  scene6Viewport.style.filter =
+  scene6Bg.style.opacity = String(enter);
+  scene6Bg.style.filter =
     `blur(${lerp(14, 0, enter)}px) brightness(${lerp(0.48, 1, enter)})`;
-  scene6Viewport.style.transform = `translate3d(0, ${lerp(7, 0, enter)}vh, 0)`;
+  scene6Bg.style.transform =
+    `translate3d(0, ${lerp(7, 0, enter)}vh, 0)`;
+
+  // 전환 말미에만 바깥 배경을 청록색으로 채워 데스크톱 여백에서도 끊김이 없게 한다.
+  const backdropP = easeSmooth(segmentProgress(time, 1080, SCENE6_TIMELINE.transitionEnd));
+  scene6Screen.style.background =
+    `rgba(18, 39, 38, ${backdropP})`;
 }
 
 function renderUpPanel(panel, time, inStart, inEnd, outStart, outEnd) {
@@ -2395,9 +2422,14 @@ function renderScene6Sequence(time) {
   if (time <= SCENE6_TIMELINE.transitionEnd) {
     renderScene6Transition(time);
   } else {
+    scene6Screen.style.background = "#122726";
     scene6Viewport.style.opacity = "1";
-    scene6Viewport.style.filter = "blur(0px) brightness(1)";
+    scene6Viewport.style.background = "#122726";
+    scene6Viewport.style.filter = "none";
     scene6Viewport.style.transform = "translate3d(0,0,0)";
+    scene6Bg.style.opacity = "1";
+    scene6Bg.style.filter = "blur(0px) brightness(1)";
+    scene6Bg.style.transform = "translate3d(0,0,0)";
     scene6Corridor.style.opacity = "0";
   }
 
