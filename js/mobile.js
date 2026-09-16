@@ -45,8 +45,6 @@ const STORAGE_KEY = "unknown-world-submission-complete";
 const LAST_RESPONSE_KEY = "unknown-world-last-response";
 
 const SCENE23_ASSETS = [
-  "./assets/scene02-milkyway/milkyway-bg.png",
-  "./assets/scene02-milkyway/galaxy-closeup-rotating-v17.png",
   "./assets/scene03-galaxy-cluster/galaxy-cluster-bg.png"
 ];
 
@@ -164,104 +162,67 @@ const SCENE1_END = 16850;
 
 
 /* =======================================================
-   Scene 2 → Scene 3 시작부
+   Scene 1 → Scene 3 직접 전환 (v16)
    -------------------------------------------------------
-   Scene 2
-   - Scene 1 마지막 화면에서 은하수로 crossfade
-   - 은하수 약 3초 유지
-   - 밝은 은하수 영역으로 부드럽게 Zoom In
-   - galaxy-closeup-transition 이미지로 Crossfade
+   ※ 기존 Scene 번호는 유지한다.
+      Scene 2와 중간 은하 장면만 재생에서 제거하고,
+      기존 Scene 3은 계속 "Scene 3"으로 부른다.
 
-   Scene 3 시작
-   - 기존 저해상도 galaxy-cluster-bg.png의 타깃 은하:
-     약 (64.03, 31.92)
-   - Closeup galaxy를 작게 만들며 target galaxy로 Match Dissolve
-   - 해당 은하를 중심으로 은하단 전체까지 Zoom Out
+   0.00~0.95s : Scene 1의 (25,30) 부근으로 빠르게 Zoom In
+   0.72~1.02s : 확대 상태를 유지하며 Scene 3 은하단으로 blur/crossfade
+   1.02~2.20s : Scene 3에서 빠르게 Zoom Out + 중앙 이동
+   2.20~3.20s : 전체 화면 상태 1초 유지
+   3.20~3.85s : "보이지 않는 우주," blur → sharp
+   3.85~7.25s : 문구 완전 표시 3.4초
 ======================================================= */
 
 const SCENE23_TIMELINE = {
-  // Scene 1 → Scene 2
-  scene1ToMilkywayEnd: 2200,
+  scene1ZoomEnd: 950,
 
-  // Scene 2 : 은하수
-  milkywayHoldEnd: 5200,
+  clusterFadeStart: 720,
+  clusterFadeEnd: 1020,
 
-  // 확대 속도 향상: 4.5초 → 3.0초
-  milkywayZoomEnd: 8200,
+  clusterZoomOutStart: 1020,
+  clusterZoomOutEnd: 2200,
 
-  // 은하수 → 중간 은하 이미지 전환: 1.5초
-  // 확대 중간부터 나타나 확대 종료와 동시에 선명해짐
-  closeupFadeStart: 6700,
-  closeupReady: 8200,
-  closeupHoldEnd: 9700,
+  fullFrameHoldEnd: 3200,
 
-  // Scene 2 → Scene 3
-  // 중간 은하는 9.70초까지 천천히 회전하고, 그 시점부터 바로 전환 시작
-  closeupRotateEnd: 9700,
+  scene3TitleStart: 3200,
+  scene3TitleReady: 3850,
 
-  // 회전 종료와 동시에 은하단으로 0.4초 crossfade
-  closeupFadeOutStart: 9700,
-  closeupFadeOutEnd: 10100,
-
-  // 은하단 이미지도 9.70초부터 즉시 나타나며 match
-  clusterFadeStart: 9700,
-  clusterFadeEnd: 10100,
-
-  // closeup이 사라진 직후 Zoom Out 시작
-  clusterZoomOutStart: 10100,
-
-  // 줌아웃 시작 후 0.5초 뒤 중앙 이동 시작
-  clusterPanStart: 10600,
-  clusterZoomOutEnd: 13900,
-
-  // Scene 3 완료 텍스트
-  scene3TitleStart: 14250,
-  scene3TitleReady: 15000,
-
-  // Scene 4 직전 장면 유지
-  preScene4HoldEnd: 18400
+  preScene4HoldEnd: 7250
 };
 
-const MILKYWAY_TARGET = {
-  // 요청 좌표: 중앙이 아니라 (45,55) 위치로 확대
-  x: 45.0,
-  y: 55.0
-};
-
-const MILKYWAY_BASE_SCALE = 1.15;
-// 좌측 하단 고정점으로 1.15배 확대.
-// (현재 화면에 딱 맞는 상태를 기준으로 왼쪽 아래는 고정되고,
-// 이미지가 오른쪽/위쪽으로 더 크게 펼쳐짐)
-const MILKYWAY_BASE_ANCHOR = { x: 0, y: 100 };
-
-const CLOSEUP_GALAXY_CENTER = {
-  // galaxy-closeup-transition.png의 큰 은하 중심
-  x: 49.5,
-  y: 45.5
+const SCENE1_GALAXY_TARGET = {
+  // 요청 좌표: 여인 아래 은하수 부근
+  x: 25.0,
+  y: 30.0,
+  zoom: 5.2
 };
 
 const CLUSTER_TARGET = {
-  // 기존 저해상도 galaxy-cluster-bg.png에서 사용하던 타깃 은하 좌표.
+  // 기존 Scene 3 저해상도 은하단 이미지의 타깃 은하 좌표
   x: 64.03,
-  y: 31.92
+  y: 31.92,
+  zoom: 14
 };
 
 const SCENE23_END = SCENE23_TIMELINE.preScene4HoldEnd;
 
 
 /* =======================================================
-   Scene 4 — 닿을 수 없는 심해 (v15)
+   Scene 4 — 닿을 수 없는 심해 (v16)
    -------------------------------------------------------
    0.0~1.4s    : Scene 3 → Scene 4 암흑 통로
    1.4~7.2s    : 심해 상단 → 바닥 하강
-   2.2~5.3s    : 물고기 떼 A 좌 → 우하단 (2초 slow 후 가속)
-   3.9~7.0s    : 물고기 떼 B 우 → 좌하단 (2초 slow 후 가속)
-   7.35~12.745s: 고래 더 크게 등장, 매우 느리게 이동하며 계속 잔류
-   10.795~16.645s: 카메라 다시 상승 (기존 대비 1.3배 느림)
-   10.99~14.955s : 대왕오징어 더 크게 등장, 우 → 좌 이동하며 축소
-   14.955~16.645s: 좌우 반전 후 우상단 빠른 퇴장 (기존 대비 1.3배 느림)
-   17.165~17.865s: "닿을 수 없는 심해," blur → sharp
-   17.865~21.265s: 문구 유지 3.4초 (유지시간 그대로)
+   2.2~5.3s    : 물고기 떼 A 좌 → 우하단
+   3.9~7.0s    : 물고기 떼 B 우 → 좌하단
+   7.20s       : 바닥 도달과 동시에 고래 등장 시작
+   10.645s     : 카메라 다시 상승
+   10.84s      : 대왕오징어 등장 시작
+   14.805~16.495s: 오징어 좌우 반전 후 우상단 퇴장
+   17.015~17.715s: "닿을 수 없는 심해," blur → sharp
+   17.715~21.115s: 문구 유지 3.4초
 ======================================================= */
 
 const SCENE4_TIMELINE = {
@@ -278,20 +239,22 @@ const SCENE4_TIMELINE = {
   fishBSlowEnd: 5900,
   fishBEnd: 7000,
 
-  whaleStart: 7350,
-  whaleEnd: 21265,
+  // 바닥 도달 즉시 고래 등장
+  whaleStart: 7200,
+  whaleEnd: 21115,
 
-  ascendStart: 10795,
-  ascendEnd: 16645,
+  // 이후 흐름도 기존 대비 150ms 앞당김
+  ascendStart: 10645,
+  ascendEnd: 16495,
 
-  squidStart: 10990,
-  squidApproachEnd: 14955,
-  squidExitEnd: 16645,
+  squidStart: 10840,
+  squidApproachEnd: 14805,
+  squidExitEnd: 16495,
 
-  titleStart: 17165,
-  titleReady: 17865,
+  titleStart: 17015,
+  titleReady: 17715,
 
-  preScene5HoldEnd: 21265
+  preScene5HoldEnd: 21115
 };
 
 const SCENE4_END = SCENE4_TIMELINE.preScene5HoldEnd;
@@ -379,8 +342,6 @@ const scene6Screen = document.querySelector("#scene6Screen");
 const scene14Screen = document.querySelector("#scene14Screen");
 
 const scene23Viewport = document.querySelector("#scene23Viewport");
-const milkywayLayer = document.querySelector("#milkywayLayer");
-const closeupLayer = document.querySelector("#closeupLayer");
 const clusterLayer = document.querySelector("#clusterLayer");
 const scene3EndTitle = document.querySelector("#scene3EndTitle");
 
@@ -720,7 +681,7 @@ function preloadScene23(force = false) {
 
       if (!scene23Ready) {
         console.warn(
-          "Scene 2/3 일부 에셋 로딩 실패:",
+          "Scene 3 에셋 로딩 실패:",
           results.filter((item) => !item.ok)
         );
       }
@@ -1211,7 +1172,10 @@ function renderSceneFrame(time) {
 
 
 /* -------------------------------------------------------
-   Scene 2 / Scene 3 camera helper
+   Scene 1 → Scene 3 direct transition helper
+   -------------------------------------------------------
+   함수/화면 ID는 기존 SCENE23 명칭을 유지하지만,
+   실제 재생에서는 Scene 2와 중간 은하가 존재하지 않는다.
 ------------------------------------------------------- */
 function scene23Matrix(
   targetX,
@@ -1229,8 +1193,6 @@ function scene23Matrix(
     anchorY = 0
   } = options;
 
-  // baseScale이 1이 아니면, 먼저 지정 anchor를 고정점으로 확대된 뒤
-  // 그 좌표계 위에서 카메라 중심 이동을 수행합니다.
   const anchorPxX = (anchorX / 100) * width;
   const anchorPxY = (anchorY / 100) * height;
 
@@ -1248,7 +1210,6 @@ function scene23Matrix(
     return `matrix(${effectiveZoom}, 0, 0, ${effectiveZoom}, ${tx}, ${ty})`;
   }
 
-  // 회전은 closeup galaxy match용. 중심점은 화면 중앙에 유지.
   return (
     `translate(${width / 2}px, ${height / 2}px) ` +
     `translate(${anchorPxX * (1 - baseScale)}px, ${anchorPxY * (1 - baseScale)}px) ` +
@@ -1257,205 +1218,95 @@ function scene23Matrix(
   );
 }
 
-function scene23Ease(time, start, end) {
-  return easeSmooth(segmentProgress(time, start, end));
-}
-
 function resetScene23() {
-  scene23Screen.style.opacity = "1";
+  scene23Screen.style.opacity = "0";
   scene23Screen.style.filter = "blur(0px)";
   scene23Viewport.style.transform = "translate3d(0,0,0)";
-  scene3EndTitle.style.filter = "blur(0px)";
+  scene1Screen.style.opacity = "1";
   scene1Screen.style.filter = "blur(0px)";
 
-  milkywayLayer.style.opacity = "0";
-  milkywayLayer.style.filter = "blur(0px)";
-  milkywayLayer.style.transform = scene23Matrix(
-    50,
-    50,
-    1,
-    0,
-    {
-      baseScale: MILKYWAY_BASE_SCALE,
-      anchorX: MILKYWAY_BASE_ANCHOR.x,
-      anchorY: MILKYWAY_BASE_ANCHOR.y
-    }
-  );
-
-  closeupLayer.style.opacity = "0";
-  closeupLayer.style.filter = "blur(10px)";
-  closeupLayer.style.transform = scene23Matrix(
-    CLOSEUP_GALAXY_CENTER.x,
-    CLOSEUP_GALAXY_CENTER.y,
-    1
-  );
-
-  clusterLayer.style.opacity = "0";
-  clusterLayer.style.filter = "blur(0px)";
+  clusterLayer.style.opacity = "1";
+  clusterLayer.style.filter = "blur(10px)";
   clusterLayer.style.transform = scene23Matrix(
     CLUSTER_TARGET.x,
     CLUSTER_TARGET.y,
-    14
+    CLUSTER_TARGET.zoom
   );
 
   scene3EndTitle.style.opacity = "0";
+  scene3EndTitle.style.filter = "blur(8px)";
   scene3EndTitle.style.transform = "translate(-50%, calc(-50% + 10px))";
 }
 
 function renderScene23(time) {
   /* -----------------------------------------------------
-     1. Scene 1 → Milky Way Crossfade
+     1. Scene 1: (25,30) 부근으로 빠른 Zoom In
+     - 기존 ease-in-out보다 즉각적으로 속도가 붙도록 easeOutCubic
   ----------------------------------------------------- */
-  const intro = scene23Ease(
-    time,
-    0,
-    SCENE23_TIMELINE.scene1ToMilkywayEnd
+  const zoomInP = easeOutCubic(
+    segmentProgress(time, 0, SCENE23_TIMELINE.scene1ZoomEnd)
   );
 
-  scene23Screen.style.opacity = String(intro);
+  const scene1X = lerp(50, SCENE1_GALAXY_TARGET.x, zoomInP);
+  const scene1Y = lerp(50, SCENE1_GALAXY_TARGET.y, zoomInP);
+  const scene1Zoom = Math.exp(
+    lerp(
+      Math.log(1),
+      Math.log(SCENE1_GALAXY_TARGET.zoom),
+      zoomInP
+    )
+  );
 
-  // 이전 장면은 점점 흐려지고,
-  // 다음 장면은 흐릿한 상태에서 점점 선명해짐.
-  scene1Screen.style.filter = `blur(${lerp(0, 6, intro)}px)`;
-  scene23Screen.style.filter = `blur(${lerp(10, 0, intro)}px)`;
+  sceneCamera.style.transform = cameraMatrix(
+    scene1X,
+    scene1Y,
+    scene1Zoom
+  );
 
   /* -----------------------------------------------------
-     2. Milky Way
-     - 좌측 하단 anchor 기준 1.15배 확대 상태로 시작
-     - (45,55)를 향해 이전보다 빠르게 확대
-     - 확대 중간부터 은하 중간 이미지가 1.5초 동안 등장
+     2. 확대 상태에서 Scene 3 은하단으로 빠른 blur/crossfade
+     - 양쪽의 확대 초점을 화면 중앙에 맞춰 장면 전환 지점을 연결
   ----------------------------------------------------- */
-  let milkyZoom = 1;
-  let milkyX = 50;
-  let milkyY = 50;
-
-  if (time >= SCENE23_TIMELINE.milkywayHoldEnd) {
-    const p = scene23Ease(
+  const clusterFadeP = easeOutCubic(
+    segmentProgress(
       time,
-      SCENE23_TIMELINE.milkywayHoldEnd,
-      SCENE23_TIMELINE.milkywayZoomEnd
-    );
-
-    milkyZoom = lerp(1, 3.15, p);
-    milkyX = lerp(50, MILKYWAY_TARGET.x, p);
-    milkyY = lerp(50, MILKYWAY_TARGET.y, p);
-  }
-
-  const closeupFadeIn = scene23Ease(
-    time,
-    SCENE23_TIMELINE.closeupFadeStart,
-    SCENE23_TIMELINE.closeupReady
+      SCENE23_TIMELINE.clusterFadeStart,
+      SCENE23_TIMELINE.clusterFadeEnd
+    )
   );
 
-  milkywayLayer.style.opacity = String(1 - closeupFadeIn * 0.94);
-
-  // 은하수는 전환되며 살짝 흐려지고,
-  // 중간 은하 이미지는 blur → sharp로 선명해짐.
-  milkywayLayer.style.filter = `blur(${lerp(0, 5, closeupFadeIn)}px)`;
-  closeupLayer.style.filter = `blur(${lerp(10, 0, closeupFadeIn)}px)`;
-
-  milkywayLayer.style.transform = scene23Matrix(
-    milkyX,
-    milkyY,
-    milkyZoom,
-    0,
-    {
-      baseScale: MILKYWAY_BASE_SCALE,
-      anchorX: MILKYWAY_BASE_ANCHOR.x,
-      anchorY: MILKYWAY_BASE_ANCHOR.y
-    }
-  );
+  scene23Screen.style.opacity = String(clusterFadeP);
+  scene1Screen.style.opacity = String(1 - clusterFadeP);
+  scene1Screen.style.filter =
+    `blur(${lerp(0, 7, clusterFadeP)}px) brightness(${lerp(1, 0.64, clusterFadeP)})`;
+  clusterLayer.style.filter =
+    `blur(${lerp(10, 0, clusterFadeP)}px)`;
 
   /* -----------------------------------------------------
-     3. Closeup galaxy
-     - 은하수 확대 중간부터 등장
-     - 확대 종료 후 잠시 유지
+     3. Scene 3: 빠르게 Zoom Out + 동시에 중앙 이동
+     - 14× → 1× 로그 보간
+     - target 은하 좌표 → 화면 중앙(50,50)
+     - 끝부분에서만 살짝 감속하는 easeOutCubic
   ----------------------------------------------------- */
-  let closeupOpacity = closeupFadeIn;
-  // 사용자가 0.8배 축소한 원본을 주었으므로, 화면에서는 더 확대해서 사용한다.
-  // fade-in 동안 약간 안정되며, 이후에는 같은 배율을 유지한다.
-  const closeupZoom = lerp(1.86, 1.38, closeupFadeIn);
-
-  /* -----------------------------------------------------
-     4. Scene 2 → Scene 3 Match
-     - 중간 은하는 등장 시작(6.70s)부터 9.70s까지
-       기존과 같은 속도로 시계방향 회전한다.
-     - 9.70s부터는 추가 회전 없이 그 각도를 유지한 채
-       0.4초 동안 바로 은하단 이미지로 crossfade한다.
-  ----------------------------------------------------- */
-  const ROTATION_SPEED_DEG_PER_MS = 30 / 4150;
-  const rotationElapsed = clamp(
-    Math.min(time, SCENE23_TIMELINE.closeupRotateEnd) -
-      SCENE23_TIMELINE.closeupFadeStart,
-    0,
-    SCENE23_TIMELINE.closeupRotateEnd - SCENE23_TIMELINE.closeupFadeStart
-  );
-  const closeupRotation = rotationElapsed * ROTATION_SPEED_DEG_PER_MS;
-
-  const closeupFadeOut = scene23Ease(
-    time,
-    SCENE23_TIMELINE.closeupFadeOutStart,
-    SCENE23_TIMELINE.closeupFadeOutEnd
-  );
-
-  if (time >= SCENE23_TIMELINE.closeupFadeOutStart) {
-    closeupOpacity = 1 - closeupFadeOut;
-  }
-
-  closeupLayer.style.opacity = String(clamp(closeupOpacity));
-  closeupLayer.style.transform = scene23Matrix(
-    CLOSEUP_GALAXY_CENTER.x,
-    CLOSEUP_GALAXY_CENTER.y,
-    closeupZoom,
-    closeupRotation
-  );
-
-  /* -----------------------------------------------------
-     5. Cluster layer
-     - 9.70초부터 바로 같은 자리에 나타나 match
-  ----------------------------------------------------- */
-  const clusterFade = scene23Ease(
-    time,
-    SCENE23_TIMELINE.clusterFadeStart,
-    SCENE23_TIMELINE.clusterFadeEnd
-  );
-
-  let clusterZoom = 14;
-  let clusterX = CLUSTER_TARGET.x;
-  let clusterY = CLUSTER_TARGET.y;
-
-  /* -----------------------------------------------------
-     6. Closeup이 짧게 사라진 직후
-        a) Zoom Out 먼저 시작
-        b) 0.5초 뒤 중앙 이동 시작
-  ----------------------------------------------------- */
-  if (time >= SCENE23_TIMELINE.clusterZoomOutStart) {
-    const zoomOut = scene23Ease(
+  const zoomOutP = easeOutCubic(
+    segmentProgress(
       time,
       SCENE23_TIMELINE.clusterZoomOutStart,
       SCENE23_TIMELINE.clusterZoomOutEnd
-    );
+    )
+  );
 
-    // 고배율 → 저배율 전환이 자연스럽도록 로그 보간
-    clusterZoom = Math.exp(
-      lerp(
-        Math.log(14),
-        Math.log(1),
-        zoomOut
-      )
-    );
+  const clusterZoom = Math.exp(
+    lerp(
+      Math.log(CLUSTER_TARGET.zoom),
+      Math.log(1),
+      zoomOutP
+    )
+  );
 
-    const panProgress = scene23Ease(
-      time,
-      SCENE23_TIMELINE.clusterPanStart,
-      SCENE23_TIMELINE.clusterZoomOutEnd
-    );
+  const clusterX = lerp(CLUSTER_TARGET.x, 50, zoomOutP);
+  const clusterY = lerp(CLUSTER_TARGET.y, 50, zoomOutP);
 
-    clusterX = lerp(CLUSTER_TARGET.x, 50, panProgress);
-    clusterY = lerp(CLUSTER_TARGET.y, 50, panProgress);
-  }
-
-  clusterLayer.style.opacity = String(clusterFade);
   clusterLayer.style.transform = scene23Matrix(
     clusterX,
     clusterY,
@@ -1463,16 +1314,18 @@ function renderScene23(time) {
   );
 
   /* -----------------------------------------------------
-     7. Scene 3 마무리 텍스트
-     - Scene 4 직전 장면
+     4. 전체 화면 도달 후 정확히 1초 뒤 타이틀 시작
   ----------------------------------------------------- */
-  const titleP = scene23Ease(
-    time,
-    SCENE23_TIMELINE.scene3TitleStart,
-    SCENE23_TIMELINE.scene3TitleReady
+  const titleP = easeOutCubic(
+    segmentProgress(
+      time,
+      SCENE23_TIMELINE.scene3TitleStart,
+      SCENE23_TIMELINE.scene3TitleReady
+    )
   );
 
   scene3EndTitle.style.opacity = String(titleP);
+  scene3EndTitle.style.filter = `blur(${lerp(8, 0, titleP)}px)`;
   scene3EndTitle.style.transform =
     `translate(-50%, calc(-50% + ${lerp(10, 0, titleP)}px))`;
 }
@@ -2627,14 +2480,14 @@ function scene23Loop(now, token) {
 
   renderScene23(time);
 
-  // 긴 crossfade가 충분히 진행된 뒤 Scene 1을 숨깁니다.
+  // Scene 1 → Scene 3 crossfade가 끝나면 Scene 1을 숨긴다.
   if (
-    time >= SCENE23_TIMELINE.scene1ToMilkywayEnd &&
+    time >= SCENE23_TIMELINE.clusterFadeEnd &&
     !scene1Screen.hidden
   ) {
     scene1Screen.hidden = true;
+    scene1Screen.style.opacity = "1";
     scene1Screen.style.filter = "blur(0px)";
-    scene23Screen.style.filter = "blur(0px)";
   }
 
   if (elapsed >= SCENE23_END) {
@@ -2657,7 +2510,7 @@ async function playScene23() {
     const ready = await preloadScene23(true);
 
     if (!ready) {
-      console.error("Scene 2/3 핵심 에셋을 불러오지 못했습니다.");
+      console.error("Scene 3 핵심 에셋을 불러오지 못했습니다.");
       renderScene14();
       return;
     }
@@ -2667,7 +2520,7 @@ async function playScene23() {
 
   resetScene23();
 
-  // Scene 1 마지막 프레임 위에 Scene 2를 겹쳐서 crossfade.
+  // Scene 1 마지막 프레임 위에 Scene 3 은하단을 겹쳐서 직접 전환.
   scene23Screen.hidden = false;
   scene23Screen.style.opacity = "0";
 
@@ -2731,7 +2584,7 @@ async function playScene1() {
 ------------------------------------------------------- */
 document.addEventListener("visibilitychange", () => {
   // requestAnimationFrame은 백그라운드 탭에서 자연스럽게 정지합니다.
-  // Scene 1 / Scene 2-3 / Scene 4 / Scene 5 / Scene 6~14 모두 절대시간 기반이므로
+  // Scene 1 / Scene 3 / Scene 4 / Scene 5 / Scene 6~14 모두 절대시간 기반이므로
   // 별도 애니메이션 객체 동기화가 필요하지 않습니다.
 });
 

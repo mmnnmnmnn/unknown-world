@@ -63,34 +63,15 @@
           <p>우주를 준비하고 있습니다…</p>
         </div>
 
-        <div id="sceneDebugBadge" class="scene-debug-badge">SCENE 1 · v5 SMOOTH</div>
+        <div id="sceneDebugBadge" class="scene-debug-badge">SCENE 1 · v16 FAST</div>
       </div>
     </section>
 
 
-    <!-- Scene 2 + Scene 3 시작부
-         Scene 2: 은하수 → 특정 은하 확대
-         Scene 3 시작: 같은 위치를 기준으로 은하단까지 Zoom Out -->
-    <section id="scene23Screen" class="app-screen scene23-screen" hidden aria-label="은하수와 은하단 전환 애니메이션">
+    <!-- Scene 3 — Scene 1의 은하수 영역에서 직접 은하단으로 전환
+         ※ 기존 Scene 번호를 유지하며 Scene 2와 중간 은하 장면은 삭제 -->
+    <section id="scene23Screen" class="app-screen scene23-screen" hidden aria-label="은하단 전환 애니메이션">
       <div id="scene23Viewport" class="scene23-viewport">
-
-        <div id="milkywayLayer" class="scene23-layer">
-          <img
-            class="scene23-image"
-            src="./assets/scene02-milkyway/milkyway-bg.png"
-            alt=""
-            draggable="false"
-          />
-        </div>
-
-        <div id="closeupLayer" class="scene23-layer">
-          <img
-            class="scene23-image"
-            src="./assets/scene02-milkyway/galaxy-closeup-rotating-v17.png"
-            alt=""
-            draggable="false"
-          />
-        </div>
 
         <div id="clusterLayer" class="scene23-layer">
           <img
@@ -105,7 +86,7 @@
           보이지 않는 우주,
         </div>
 
-        <div id="scene23DebugBadge" class="scene-debug-badge">SCENE 2 → 3 · v15</div>
+        <div id="scene23DebugBadge" class="scene-debug-badge">SCENE 3 · v16 FAST</div>
       </div>
     </section>
 
@@ -165,7 +146,7 @@
           닿을 수 없는 심해,
         </div>
 
-        <div class="scene-debug-badge">SCENE 4 · v15</div>
+        <div class="scene-debug-badge">SCENE 4 · v16</div>
       </div>
     </section>
 
@@ -305,6 +286,6 @@
 
   </main>
 
-  <script type="module" src="./js/mobile.js?v=clean-v10-scene7-font"></script>
+  <script type="module" src="./js/mobile.js?v=mobile-v16-fast-transition"></script>
 </body>
 </html>
