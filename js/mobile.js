@@ -1895,7 +1895,7 @@ function resetScene5() {
 
   futureTimelapse.pause();
   futureTimelapse.loop = false;
-  futureTimelapse.playbackRate = 1.013874;
+  futureTimelapse.playbackRate = 1;
   futureTimelapse.onended = null;
   try {
     futureTimelapse.currentTime = 0;
