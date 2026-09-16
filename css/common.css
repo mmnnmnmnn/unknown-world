@@ -823,7 +823,8 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 
 .scene7-copy p {
-  font-size: clamp(28px, 6.7vw, 42px);
+  /* CLEAN V10: Scene 7 typing text scaled to 80% of v9. */
+  font-size: clamp(22.4px, 5.36vw, 33.6px);
   line-height: 1.48;
   white-space: pre-line;
 }
