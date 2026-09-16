@@ -1254,3 +1254,39 @@ button { -webkit-tap-highlight-color: transparent; }
   top: 22.5%;
   font-size: clamp(22px, 4.96vw, 32px);
 }
+
+
+/* =======================================================
+   V18 — Scene 14 mobile keyboard stabilization
+   -------------------------------------------------------
+   Scene 14 entry-time viewport size is frozen in JS.
+   Keyboard changes no longer shrink the full 9:16 scene.
+   Only the response-form layer moves upward when required.
+   ======================================================= */
+
+.form-screen.scene14-viewport-locked {
+  inset: 0 0 auto 0;
+  width: 100vw;
+  height: var(--scene14-locked-height);
+  min-height: var(--scene14-locked-height);
+  max-height: var(--scene14-locked-height);
+}
+
+.form-screen.scene14-viewport-locked .form-shell {
+  width: var(--scene14-shell-width);
+  height: var(--scene14-shell-height);
+  max-width: none;
+  max-height: none;
+}
+
+.form-screen.scene14-viewport-locked .response-form {
+  transform: translate3d(
+    0,
+    var(--scene14-form-shift-y, 0px),
+    0
+  );
+  transition:
+    opacity 360ms ease,
+    transform 220ms cubic-bezier(.2, .75, .2, 1);
+  will-change: opacity, transform;
+}

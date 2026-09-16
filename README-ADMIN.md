@@ -55,3 +55,11 @@ Firebase Console → Authentication → Users → Add user
 `responses/{id}`와 `publicResponses/{id}`를 동시에 삭제합니다.
 
 따라서 기존 Firebase Rules를 다시 수정하거나 게시할 필요가 없습니다.
+
+
+## Admin v3 — 전체 참여 제한 초기화
+- `전체 참여 제한 초기화` 버튼을 추가했습니다.
+- 누르면 `participationState/version`이 1 증가합니다.
+- 기존 `responses` / `publicResponses` 데이터는 삭제되지 않습니다.
+- 참여했던 브라우저는 새 라운드를 감지하면 다시 질문을 제출할 수 있습니다.
+- 새 기능을 사용하려면 이번 `database.rules.json`으로 Realtime Database Rules를 다시 게시해야 합니다.

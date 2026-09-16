@@ -82,6 +82,10 @@ const testButtons = [...document.querySelectorAll(".test-generate")];
 const deleteTestsButton = document.querySelector("#deleteTestsButton");
 const testMessage = document.querySelector("#testMessage");
 
+const resetParticipationButton = document.querySelector("#resetParticipationButton");
+const participationVersionText = document.querySelector("#participationVersionText");
+const participationMessage = document.querySelector("#participationMessage");
+
 const includeTestsCheckbox = document.querySelector("#includeTestsCheckbox");
 const drawButton = document.querySelector("#drawButton");
 const currentWinnerCard = document.querySelector("#currentWinnerCard");
@@ -100,9 +104,11 @@ let auth;
 let db;
 let responses = [];
 let currentWinnerState = null;
+let currentParticipationVersion = 0;
 let unsubscribeResponses = null;
 let unsubscribeConnection = null;
 let unsubscribeWinner = null;
+let unsubscribeParticipation = null;
 
 function setBusy(elements, busy) {
   for (const element of elements) {
@@ -225,6 +231,7 @@ function attachRealtimeListeners() {
   if (unsubscribeResponses) unsubscribeResponses();
   if (unsubscribeConnection) unsubscribeConnection();
   if (unsubscribeWinner) unsubscribeWinner();
+  if (unsubscribeParticipation) unsubscribeParticipation();
 
   unsubscribeResponses = onValue(ref(db, "responses"), (snapshot) => {
     const raw = snapshot.val() ?? {};
@@ -245,6 +252,22 @@ function attachRealtimeListeners() {
     currentWinnerState = snapshot.val();
     renderCurrentWinner();
   });
+
+  unsubscribeParticipation = onValue(
+    ref(db, "participationState/version"),
+    (snapshot) => {
+      currentParticipationVersion = Math.max(
+        0,
+        Math.floor(Number(snapshot.val()) || 0)
+      );
+      participationVersionText.textContent =
+        `현재 참여 라운드: ${currentParticipationVersion}`;
+    },
+    (error) => {
+      console.error(error);
+      participationVersionText.textContent = "참여 라운드 확인 실패";
+    }
+  );
 }
 
 async function login(password) {
@@ -347,6 +370,24 @@ function secureRandomIndex(length) {
   } while (buffer[0] >= limit);
 
   return buffer[0] % length;
+}
+
+async function resetParticipationLimit() {
+  const ok = window.confirm(
+    "모든 참여 브라우저가 다시 질문을 제출할 수 있게 됩니다.\n\n기존 응답 데이터는 삭제되지 않습니다.\n계속할까요?"
+  );
+
+  if (!ok) return;
+
+  const nextVersion = currentParticipationVersion + 1;
+
+  await update(ref(db), {
+    "participationState/version": nextVersion,
+    "participationState/resetAt": Date.now()
+  });
+
+  participationMessage.textContent =
+    `참여 제한을 초기화했습니다. 새 참여 라운드: ${nextVersion}`;
 }
 
 async function drawWinner() {
@@ -519,6 +560,20 @@ deleteTestsButton.addEventListener("click", async () => {
   }
 });
 
+resetParticipationButton.addEventListener("click", async () => {
+  setBusy([resetParticipationButton], true);
+  participationMessage.textContent = "참여 제한 초기화 중…";
+
+  try {
+    await resetParticipationLimit();
+  } catch (error) {
+    console.error(error);
+    participationMessage.textContent = "참여 제한 초기화에 실패했습니다.";
+  } finally {
+    setBusy([resetParticipationButton], false);
+  }
+});
+
 drawButton.addEventListener("click", async () => {
   setBusy([drawButton], true);
   drawMessage.textContent = "추첨 중…";
@@ -597,10 +652,12 @@ function initialize() {
       if (unsubscribeResponses) unsubscribeResponses();
       if (unsubscribeConnection) unsubscribeConnection();
       if (unsubscribeWinner) unsubscribeWinner();
+      if (unsubscribeParticipation) unsubscribeParticipation();
 
       unsubscribeResponses = null;
       unsubscribeConnection = null;
       unsubscribeWinner = null;
+      unsubscribeParticipation = null;
 
       if (user) {
         signOut(auth);

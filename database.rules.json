@@ -19,6 +19,10 @@
     "displayState": {
       ".read": true,
       ".write": "auth != null && auth.token.email == 'admin@unknown-world.app'"
+    },
+    "participationState": {
+      ".read": true,
+      ".write": "auth != null && auth.token.email == 'admin@unknown-world.app'"
     }
   }
 }

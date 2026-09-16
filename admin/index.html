@@ -119,6 +119,21 @@
             <p id="testMessage" class="small-message" aria-live="polite"></p>
           </section>
 
+
+          <section class="panel control-card">
+            <div class="panel-header compact">
+              <div>
+                <h2>참여 제한</h2>
+                <p>기존 응답은 그대로 두고 모든 브라우저의 재참여를 허용합니다.</p>
+              </div>
+            </div>
+            <p id="participationVersionText" class="small-message">현재 참여 라운드: 0</p>
+            <button id="resetParticipationButton" class="secondary-button full-button" type="button">
+              전체 참여 제한 초기화
+            </button>
+            <p id="participationMessage" class="small-message" aria-live="polite"></p>
+          </section>
+
           <section class="panel control-card">
             <div class="panel-header compact">
               <div>
@@ -171,6 +186,6 @@
     </section>
   </main>
 
-  <script type="module" src="./admin.js?v=admin-v2-delete-fix"></script>
+  <script type="module" src="./admin.js?v=admin-v3-participation-reset"></script>
 </body>
 </html>

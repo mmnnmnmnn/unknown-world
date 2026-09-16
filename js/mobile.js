@@ -4,6 +4,7 @@ import {
   ref,
   push,
   update,
+  onValue,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js";
 
@@ -43,6 +44,7 @@ window.addEventListener("unhandledrejection", (event) => {
 
 const STORAGE_KEY = "unknown-world-submission-complete";
 const LAST_RESPONSE_KEY = "unknown-world-last-response";
+const PARTICIPATION_VERSION_KEY = "unknown-world-participation-version";
 
 const SCENE23_ASSETS = [
   "./assets/scene03-galaxy-cluster/galaxy-cluster-bg.png"
@@ -301,16 +303,20 @@ const SCENE6_TIMELINE = {
 
   scene8InStart: 10800, scene8InEnd: 11400, scene8OutStart: 13400, scene8OutEnd: 14000,
   scene9InStart: 14000, scene9InEnd: 14600, scene9OutStart: 16600, scene9OutEnd: 17200,
-  scene10InStart: 17200, scene10InEnd: 17800, scene10OutStart: 19800, scene10OutEnd: 20400,
-  scene11InStart: 20400, scene11InEnd: 21000, scene11OutStart: 22600, scene11OutEnd: 23200,
-  scene12InStart: 23200, scene12InEnd: 23800, scene12OutStart: 25400, scene12OutEnd: 26000,
 
-  scene13Q1Start: 26000, scene13Q1End: 26500,
-  scene13Q2Start: 26800, scene13Q2End: 27300,
-  scene13Q3Start: 27600, scene13Q3End: 28100,
-  scene13OutStart: 30000, scene13OutEnd: 30600,
+  // v18: Scene 10 완전 표시 구간을 1초 추가.
+  scene10InStart: 17200, scene10InEnd: 17800, scene10OutStart: 20800, scene10OutEnd: 21400,
 
-  end: 30600
+  // 이후 장면은 모두 1초씩 뒤로 이동해 각 장면 자체 길이는 유지.
+  scene11InStart: 21400, scene11InEnd: 22000, scene11OutStart: 23600, scene11OutEnd: 24200,
+  scene12InStart: 24200, scene12InEnd: 24800, scene12OutStart: 26400, scene12OutEnd: 27000,
+
+  scene13Q1Start: 27000, scene13Q1End: 27500,
+  scene13Q2Start: 27800, scene13Q2End: 28300,
+  scene13Q3Start: 28600, scene13Q3End: 29100,
+  scene13OutStart: 31000, scene13OutEnd: 31600,
+
+  end: 31600
 };
 
 const SCENE6_END = SCENE6_TIMELINE.end;
@@ -340,6 +346,7 @@ const scene4Screen = document.querySelector("#scene4Screen");
 const scene5Screen = document.querySelector("#scene5Screen");
 const scene6Screen = document.querySelector("#scene6Screen");
 const scene14Screen = document.querySelector("#scene14Screen");
+const formShell = scene14Screen.querySelector(".form-shell");
 
 const scene23Viewport = document.querySelector("#scene23Viewport");
 const clusterLayer = document.querySelector("#clusterLayer");
@@ -429,6 +436,14 @@ const submissionSummary = document.querySelector("#submissionSummary");
 const replayButton = document.querySelector("#replayButton");
 
 let db = null;
+let currentParticipationVersion = 0;
+let participationVersionReady = false;
+
+let scene14ViewportLocked = false;
+let scene14BaseViewportWidth = 0;
+let scene14BaseViewportHeight = 0;
+let scene14ShellHeight = 0;
+let scene14KeyboardShift = 0;
 let scene1Ready = false;
 let scene1LoadingPromise = null;
 let sceneRafId = 0;
@@ -524,13 +539,45 @@ function initializeFirebase() {
   const app = initializeApp(firebaseConfig);
   db = getDatabase(app);
   scene14Warning.hidden = true;
+
+  onValue(
+    ref(db, "participationState/version"),
+    (snapshot) => {
+      reconcileParticipationVersion(snapshot.val() ?? 0);
+    },
+    (error) => {
+      console.warn("참여 라운드 정보를 불러오지 못했습니다:", error);
+      participationVersionReady = true;
+      currentParticipationVersion = 0;
+    }
+  );
 }
 
 /* -------------------------------------------------------
-   LocalStorage
+   LocalStorage / participation round
 ------------------------------------------------------- */
-function isCompletedBrowser() {
+function getLocalParticipationVersion() {
+  const raw = Number(localStorage.getItem(PARTICIPATION_VERSION_KEY));
+  return Number.isFinite(raw) && raw >= 0 ? Math.floor(raw) : 0;
+}
+
+function setLocalParticipationVersion(version) {
+  localStorage.setItem(
+    PARTICIPATION_VERSION_KEY,
+    String(Math.max(0, Math.floor(Number(version) || 0)))
+  );
+}
+
+function hasLocalCompletionFlag() {
   return localStorage.getItem(STORAGE_KEY) === "true";
+}
+
+function isCompletedBrowser() {
+  if (!hasLocalCompletionFlag()) return false;
+
+  // 기존 참여자의 저장 버전이 없으면 0으로 간주한다.
+  // 관리자가 라운드를 1 이상으로 올린 순간 기존 참여 제한이 풀린다.
+  return getLocalParticipationVersion() >= currentParticipationVersion;
 }
 
 function getLastResponse() {
@@ -542,15 +589,224 @@ function getLastResponse() {
   }
 }
 
+function clearLocalCompletionForNewRound(version) {
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(LAST_RESPONSE_KEY);
+  setLocalParticipationVersion(version);
+}
+
 function saveLocalCompletion(data) {
   localStorage.setItem(STORAGE_KEY, "true");
   localStorage.setItem(LAST_RESPONSE_KEY, JSON.stringify(data));
+  setLocalParticipationVersion(currentParticipationVersion);
 }
+
+function refreshParticipationUiAfterReset() {
+  revisitNotice.hidden = true;
+
+  if (!scene14Screen.hidden) {
+    scene14Intro.hidden = false;
+    completedState.hidden = true;
+    form.hidden = false;
+    formMessage.textContent = "";
+    submitButton.disabled = !db;
+    prepareScene14Ready();
+  }
+}
+
+function reconcileParticipationVersion(nextVersion) {
+  const normalized = Math.max(0, Math.floor(Number(nextVersion) || 0));
+  currentParticipationVersion = normalized;
+  participationVersionReady = true;
+
+  const localVersion = getLocalParticipationVersion();
+
+  if (hasLocalCompletionFlag() && localVersion < normalized) {
+    clearLocalCompletionForNewRound(normalized);
+    refreshParticipationUiAfterReset();
+    return;
+  }
+
+  // 미참여 브라우저도 현재 라운드를 기억해 이후 제출 시 같은 버전을 저장한다.
+  if (!hasLocalCompletionFlag() && localVersion < normalized) {
+    setLocalParticipationVersion(normalized);
+  }
+
+  revisitNotice.hidden = !isCompletedBrowser();
+}
+
+/* -------------------------------------------------------
+   Scene 14 fixed viewport / mobile keyboard compensation
+------------------------------------------------------- */
+const SCENE14_RATIO = 9 / 16;
+const SCENE14_KEYBOARD_THRESHOLD = 96;
+
+function setScene14KeyboardShift(shiftPx) {
+  scene14KeyboardShift = Math.max(0, Number(shiftPx) || 0);
+  form.style.setProperty(
+    "--scene14-form-shift-y",
+    `${-scene14KeyboardShift}px`
+  );
+}
+
+function lockScene14Viewport() {
+  if (scene14ViewportLocked) return;
+
+  const visual = window.visualViewport;
+  const viewportWidth = Math.max(
+    1,
+    visual?.width || window.innerWidth || document.documentElement.clientWidth
+  );
+  const viewportHeight = Math.max(
+    1,
+    visual?.height || window.innerHeight || document.documentElement.clientHeight
+  );
+
+  scene14BaseViewportWidth = viewportWidth;
+  scene14BaseViewportHeight = viewportHeight;
+
+  const shellWidth = Math.min(
+    viewportWidth,
+    viewportHeight * SCENE14_RATIO
+  );
+  scene14ShellHeight = shellWidth / SCENE14_RATIO;
+
+  scene14Screen.style.setProperty(
+    "--scene14-locked-height",
+    `${viewportHeight}px`
+  );
+  scene14Screen.style.setProperty(
+    "--scene14-shell-width",
+    `${shellWidth}px`
+  );
+  scene14Screen.style.setProperty(
+    "--scene14-shell-height",
+    `${scene14ShellHeight}px`
+  );
+
+  scene14Screen.classList.add("scene14-viewport-locked");
+  scene14ViewportLocked = true;
+  setScene14KeyboardShift(0);
+}
+
+function unlockScene14Viewport() {
+  if (!scene14ViewportLocked) return;
+
+  scene14ViewportLocked = false;
+  scene14BaseViewportWidth = 0;
+  scene14BaseViewportHeight = 0;
+  scene14ShellHeight = 0;
+  setScene14KeyboardShift(0);
+
+  scene14Screen.classList.remove("scene14-viewport-locked");
+  scene14Screen.style.removeProperty("--scene14-locked-height");
+  scene14Screen.style.removeProperty("--scene14-shell-width");
+  scene14Screen.style.removeProperty("--scene14-shell-height");
+}
+
+function isScene14EditableElement(element) {
+  return element === questionInput || element === nicknameInput;
+}
+
+function updateScene14KeyboardCompensation() {
+  if (!scene14ViewportLocked || scene14Screen.hidden) return;
+
+  const active = document.activeElement;
+  const visual = window.visualViewport;
+  const visibleHeight = visual?.height || window.innerHeight;
+  const visibleTop = visual?.offsetTop || 0;
+  const visibleBottom = visibleTop + visibleHeight;
+
+  const occludedHeight = Math.max(
+    0,
+    scene14BaseViewportHeight - visibleHeight
+  );
+
+  if (
+    !isScene14EditableElement(active) ||
+    occludedHeight < SCENE14_KEYBOARD_THRESHOLD
+  ) {
+    setScene14KeyboardShift(0);
+    return;
+  }
+
+  // 현재 transform이 적용된 rect에서 기존 shift를 다시 더해
+  // "이동 전" 입력창의 원래 bottom 좌표를 복원한다.
+  const rect = active.getBoundingClientRect();
+  const unshiftedBottom = rect.bottom + scene14KeyboardShift;
+  const safeBottom = visibleBottom - 22;
+
+  const requiredShift = clamp(
+    unshiftedBottom - safeBottom,
+    0,
+    Math.max(0, scene14ShellHeight * 0.34)
+  );
+
+  setScene14KeyboardShift(requiredShift);
+}
+
+function scheduleScene14KeyboardCompensation() {
+  [0, 80, 180, 320].forEach((delay) => {
+    window.setTimeout(updateScene14KeyboardCompensation, delay);
+  });
+}
+
+if (window.visualViewport) {
+  window.visualViewport.addEventListener(
+    "resize",
+    updateScene14KeyboardCompensation
+  );
+  window.visualViewport.addEventListener(
+    "scroll",
+    updateScene14KeyboardCompensation
+  );
+}
+
+window.addEventListener("resize", () => {
+  if (scene14ViewportLocked) {
+    updateScene14KeyboardCompensation();
+  }
+});
+
+document.addEventListener("focusin", (event) => {
+  if (isScene14EditableElement(event.target)) {
+    scheduleScene14KeyboardCompensation();
+  }
+});
+
+document.addEventListener("focusout", (event) => {
+  if (isScene14EditableElement(event.target)) {
+    window.setTimeout(() => {
+      if (!isScene14EditableElement(document.activeElement)) {
+        setScene14KeyboardShift(0);
+      } else {
+        scheduleScene14KeyboardCompensation();
+      }
+    }, 180);
+  }
+});
+
+window.addEventListener("orientationchange", () => {
+  if (scene14Screen.hidden) return;
+
+  setScene14KeyboardShift(0);
+  scene14ViewportLocked = false;
+  scene14Screen.classList.remove("scene14-viewport-locked");
+
+  window.setTimeout(() => {
+    lockScene14Viewport();
+    scheduleScene14KeyboardCompensation();
+  }, 320);
+});
 
 /* -------------------------------------------------------
    화면 전환
 ------------------------------------------------------- */
 function showOnly(screen) {
+  if (screen !== "scene14") {
+    unlockScene14Viewport();
+  }
+
   startScreen.hidden = screen !== "start";
   scene1Screen.hidden = screen !== "scene1";
   scene23Screen.hidden = screen !== "scene23";
@@ -583,6 +839,7 @@ function prepareScene14Ready({ focusQuestion = false } = {}) {
   if (focusQuestion && !isCompletedBrowser()) {
     window.setTimeout(() => {
       try { questionInput.focus({ preventScroll: true }); } catch { questionInput.focus(); }
+      scheduleScene14KeyboardCompensation();
     }, 80);
   }
 }
@@ -595,6 +852,7 @@ function renderScene14() {
   stopScene6();
   stopScene14Intro();
   showOnly("scene14");
+  lockScene14Viewport();
 
   if (isCompletedBrowser()) {
     scene14Intro.hidden = true;
@@ -2505,6 +2763,7 @@ function playScene14Intro() {
   stopScene6();
   const token = activeSceneToken;
 
+  lockScene14Viewport();
   scene14Screen.hidden = false;
   scene6Screen.hidden = true;
 
