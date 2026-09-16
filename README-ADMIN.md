@@ -45,3 +45,13 @@ Firebase Console → Authentication → Users → Add user
 
 ## 테스트 데이터
 테스트 응답에는 `isTest: true`가 저장되므로 실제 응답과 구분하여 삭제할 수 있습니다.
+
+
+## Admin v2 — 전체 응답 삭제 오류 수정
+기존 전체 삭제는 `/responses`와 `/publicResponses` 부모 노드를 한 번에 삭제하려 해
+현재 Firebase Rules와 권한 경로가 맞지 않을 수 있었습니다.
+
+수정본은 관리자 화면에 로드된 각 응답 ID별로
+`responses/{id}`와 `publicResponses/{id}`를 동시에 삭제합니다.
+
+따라서 기존 Firebase Rules를 다시 수정하거나 게시할 필요가 없습니다.

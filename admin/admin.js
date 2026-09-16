@@ -426,13 +426,18 @@ async function deleteAllResponses() {
     return;
   }
 
-  await update(ref(db), {
-    responses: null,
-    publicResponses: null,
+  const updates = {
     "displayState/currentWinner": null
-  });
+  };
 
-  dangerMessage.textContent = "전체 응답을 삭제했습니다.";
+  for (const item of responses) {
+    updates[`responses/${item.id}`] = null;
+    updates[`publicResponses/${item.id}`] = null;
+  }
+
+  await update(ref(db), updates);
+
+  dangerMessage.textContent = `전체 응답 ${responses.length}개를 삭제했습니다.`;
 }
 
 loginForm.addEventListener("submit", async (event) => {
