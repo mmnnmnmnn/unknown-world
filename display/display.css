@@ -33,10 +33,10 @@ body.display-page {
 
 .display-bg {
   z-index: 0;
-  width: 110%;
-  height: 110%;
-  left: -5%;
-  top: -5%;
+  width: 118%;
+  height: 118%;
+  left: -9%;
+  top: -9%;
   object-fit: cover;
   object-position: 50% 50%;
   user-select: none;
@@ -44,7 +44,7 @@ body.display-page {
   filter: saturate(0.93) brightness(0.82) contrast(1.05);
   transform-origin: center;
   will-change: transform;
-  animation: spaceDrift 64s ease-in-out infinite alternate;
+  animation: spaceDrift 68s linear infinite;
 }
 
 .display-shade {
@@ -219,17 +219,21 @@ body.display-page {
 
 
 @keyframes spaceDrift {
+  /* 화면 4변의 정중앙(상→우→하→좌)을 시계방향으로 계속 도는 동선 */
   0% {
-    transform: scale(1.03) translate3d(-1.2%, -0.8%, 0);
+    transform: scale(1.065) translate3d(0%, -2.2%, 0);
   }
-  32% {
-    transform: scale(1.055) translate3d(1.1%, -0.45%, 0);
+  25% {
+    transform: scale(1.055) translate3d(2.2%, 0%, 0);
   }
-  67% {
-    transform: scale(1.04) translate3d(0.45%, 1.15%, 0);
+  50% {
+    transform: scale(1.065) translate3d(0%, 2.2%, 0);
+  }
+  75% {
+    transform: scale(1.055) translate3d(-2.2%, 0%, 0);
   }
   100% {
-    transform: scale(1.065) translate3d(-0.9%, 0.75%, 0);
+    transform: scale(1.065) translate3d(0%, -2.2%, 0);
   }
 }
 
