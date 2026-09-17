@@ -54,3 +54,15 @@ v9 기준으로 Scene 7 타이핑 문구만 수정했습니다.
 - Firebase의 `participationState/version` 값을 1씩 증가시키는 라운드 방식입니다.
 - 기존 참여 브라우저는 로컬 버전이 새 Firebase 버전보다 낮으면 참여 완료 상태와 마지막 응답 로컬 기록을 자동 해제합니다.
 - 이미 페이지를 열어둔 브라우저도 Firebase 값을 실시간 감지합니다.
+
+
+## Mobile v20 — Scene 4 → 5 중간 통로 이미지
+- 첨부한 녹색 그라데이션 이미지를 `assets/scene05-future/scene4-5-bridge.png`로 추가했습니다.
+- Scene 4 → 5 전환을 Scene 3 → 4와 같은 애니메이션 언어로 재구성했습니다.
+- 차이는 이동 축만 세로에서 가로(오른쪽 방향)로 바꾼 것입니다.
+- 심해는 오른쪽으로 이동하며 blur + darken + fade 됩니다.
+- 중간 이미지는 왼쪽에서 blur → sharp로 들어오고 잠깐 선명하게 보인 뒤,
+  다시 오른쪽으로 이동하며 blur + darken + fade 됩니다.
+- Scene 5 fallback은 왼쪽에서 blur → sharp로 진입합니다.
+- 2.2초 전환 총 길이는 유지하며, 전환 완료 직후 기존 타임랩스가 재생됩니다.
+- 심해→중간 이미지, 중간 이미지→Scene 5 두 경계 모두 blur가 겹치도록 구성했습니다.

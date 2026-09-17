@@ -59,6 +59,7 @@ const SCENE4_ASSETS = [
 
 const SCENE5_VIDEO_SRC = "./assets/scene05-future/future-timelapse.mp4";
 const SCENE5_FALLBACK_SRC = "./assets/scene05-future/future-fallback.jpg";
+const SCENE5_BRIDGE_SRC = "./assets/scene05-future/scene4-5-bridge.png";
 
 const SCENE6_ASSETS = [
   "./assets/scene06-14/bg-teal.png",
@@ -263,15 +264,19 @@ const SCENE4_END = SCENE4_TIMELINE.preScene5HoldEnd;
 
 
 /* =======================================================
-   Scene 5 — 아직 오지 않은 미래
+   Scene 5 — 아직 오지 않은 미래 (v20)
    -------------------------------------------------------
-   0.0~2.2s : Scene 4 → Scene 5 우측 슬라이드 + blur 전환
-              (이 구간은 fallback 정지 이미지로 전환)
-   2.2s     : Scene 5 전환 완료 → 타임랩스 재생 시작
-   2.2~8.2s : 타임랩스 총 2회 재생
-              (2회 재생이 8.2초에 정확히 끝나도록 약 1.014배 재생)
-   4.0~4.8s : "아직 오지 않은 미래." blur → sharp
-   4.8~8.2s : 문구 완전 표시 3.4초
+   Scene 3 → 4 전환의 애니메이션 언어를 그대로 사용하되,
+   이동 방향만 오른쪽으로 회전해 적용한다.
+
+   0.00~0.85s : 심해가 오른쪽으로 이동 + blur/darken/fade
+   0.12~0.76s : 중간 통로 이미지가 왼쪽에서 blur → sharp로 진입
+   0.76~0.98s : 중간 이미지가 잠깐 선명하게 유지
+   0.98~1.70s : 중간 이미지가 오른쪽으로 이동 + blur/darken/fade
+   1.45~2.20s : Scene 5 fallback이 왼쪽에서 blur → sharp로 진입
+   2.20s      : 전환 완료 → 타임랩스 재생 시작
+   4.0~4.8s  : "아직 오지 않은 미래." blur → sharp
+   4.8~8.2s  : 문구 완전 표시 3.4초
 ======================================================= */
 const SCENE5_TIMELINE = {
   transitionEnd: 2200,
@@ -363,6 +368,7 @@ const scene4Corridor = document.querySelector("#scene4Corridor");
 const scene4Title = document.querySelector("#scene4Title");
 
 const scene5Viewport = document.querySelector("#scene5Viewport");
+const scene5Bridge = document.querySelector("#scene5Bridge");
 const futureTimelapse = document.querySelector("#futureTimelapse");
 const futureFallback = document.querySelector("#futureFallback");
 const scene5TransitionVeil = document.querySelector("#scene5TransitionVeil");
@@ -1017,14 +1023,19 @@ function preloadScene5(force = false) {
 
   scene5LoadingPromise = Promise.all([
     preloadVideoElement(futureTimelapse, SCENE5_VIDEO_SRC),
-    preloadImage(SCENE5_FALLBACK_SRC)
-  ]).then(([videoResult, fallbackResult]) => {
+    preloadImage(SCENE5_FALLBACK_SRC),
+    preloadImage(SCENE5_BRIDGE_SRC)
+  ]).then(([videoResult, fallbackResult, bridgeResult]) => {
     scene5VideoReady = videoResult.ok;
     scene5UseFallback = !scene5VideoReady;
     scene5Ready = scene5VideoReady || fallbackResult.ok;
 
     if (!videoResult.ok) {
       console.warn("Scene 5 동영상 로딩 실패 — fallback 이미지 사용");
+    }
+
+    if (!bridgeResult.ok) {
+      console.warn("Scene 4→5 중간 통로 이미지 로딩 실패");
     }
 
     if (!scene5Ready) {
@@ -2116,23 +2127,28 @@ async function playScene4() {
    Scene 5 — 아직 오지 않은 미래
 ------------------------------------------------------- */
 function resetScene5() {
-  // Scene 4 마지막 화면 위에 Scene 5를 겹쳐 올리되,
-  // 전환이 시작되는 순간 검은 화면이 덮이지 않도록 screen 배경은 투명하게 시작한다.
+  // Scene 4 마지막 프레임을 그대로 출발점으로 사용한다.
   scene5Screen.style.background = "rgba(3, 7, 13, 0)";
 
-  scene5Viewport.style.opacity = "0";
-  scene5Viewport.style.transform = "translate3d(100%, 0, 0)";
-  scene5Viewport.style.filter = "blur(12px) brightness(0.64)";
+  // 중간 통로는 왼쪽에서 들어올 준비.
+  scene5Bridge.style.opacity = "0";
+  scene5Bridge.style.filter = "blur(14px) brightness(0.48)";
+  scene5Bridge.style.transform =
+    "translate3d(-7vw, 0, 0) scale(1.03)";
 
+  // Scene 5도 왼쪽에서 들어오며 blur → sharp.
+  scene5Viewport.style.opacity = "0";
+  scene5Viewport.style.transform = "translate3d(-7vw, 0, 0)";
+  scene5Viewport.style.filter = "blur(14px) brightness(0.48)";
+
+  // v20에서는 별도 띠 대신 실제 중간 이미지를 통로로 사용한다.
   scene5TransitionVeil.style.opacity = "0";
-  scene5TransitionVeil.style.transform = "translate3d(25%, 0, 0) skewX(-7deg)";
 
   scene5Title.style.opacity = "0";
   scene5Title.style.filter = "blur(8px)";
   scene5Title.style.transform = "translate(-50%, calc(-50% + 10px))";
 
-  // Scene 4 → 5 전환 중에는 반드시 fallback 정지 이미지만 보여준다.
-  // 영상은 Scene 5 전환이 완전히 끝난 뒤 시작한다.
+  // 전환 완료 전까지는 fallback 정지 이미지만 사용한다.
   futureFallback.style.opacity = "1";
   futureTimelapse.style.opacity = "0";
 
@@ -2148,39 +2164,94 @@ function resetScene5() {
   } catch {
     // 일부 브라우저는 metadata 로드 전 currentTime 설정을 거부할 수 있음.
   }
+
+  // Scene 4 마지막 프레임을 전환 출발점으로 복구.
+  scene4Viewport.style.transform = "translate3d(0, 0, 0)";
+  scene4Viewport.style.filter = "blur(0px) brightness(1)";
+  scene4Viewport.style.opacity = "1";
+  scene4Title.style.opacity = "1";
+  scene4Title.style.filter = "blur(0px)";
 }
 
 function renderScene5Transition(time) {
-  const p = easeSmooth(
-    segmentProgress(time, 0, SCENE5_TIMELINE.transitionEnd)
+  /* -----------------------------------------------------
+     Scene 3 → 4 전환을 오른쪽 방향으로 회전한 버전.
+     1) Scene 4 exit
+     2) 실제 중간 이미지 corridor
+     3) Scene 5 fallback enter
+     각 경계마다 blur → sharp / sharp → blur가 겹친다.
+  ----------------------------------------------------- */
+
+  // 1. 심해: 오른쪽으로 밀려나며 blur + darken + fade.
+  const scene4Exit = easeSmooth(
+    segmentProgress(time, 0, 850)
   );
 
-  // Scene 4 마지막 프레임 자체가 그대로 왼쪽으로 이동하며 Scene 5를 드러낸다.
-  // 별도의 검은 중간 화면을 만들지 않는다.
   scene4Viewport.style.transform =
-    `translate3d(${lerp(0, -42, p)}%, 0, 0)`;
+    `translate3d(${lerp(0, 18, scene4Exit)}vw, 0, 0) ` +
+    `scale(${lerp(1, 1.018, scene4Exit)})`;
+
   scene4Viewport.style.filter =
-    `blur(${lerp(0, 8, p)}px) brightness(${lerp(1, 0.58, p)})`;
-  scene4Viewport.style.opacity = String(lerp(1, 0.20, p));
+    `blur(${lerp(0, 12, scene4Exit)}px) ` +
+    `brightness(${lerp(1, 0.16, scene4Exit)})`;
 
-  // Scene 5는 오른쪽에서 들어오며 blur → sharp.
-  scene5Viewport.style.transform =
-    `translate3d(${lerp(100, 0, p)}%, 0, 0)`;
+  scene4Viewport.style.opacity = String(1 - scene4Exit);
+
+  const oldTitleFade = easeSmooth(segmentProgress(time, 0, 360));
+  scene4Title.style.opacity = String(1 - oldTitleFade);
+  scene4Title.style.filter =
+    `blur(${lerp(0, 5, oldTitleFade)}px)`;
+
+  // 2. 중간 이미지 진입: 왼쪽 → 오른쪽, blur → sharp.
+  const bridgeEnter = easeSmooth(
+    segmentProgress(time, 120, 760)
+  );
+
+  // 중간 이미지 퇴장: 오른쪽으로 더 흐르며 sharp → blur/darken/fade.
+  const bridgeExit = easeSmooth(
+    segmentProgress(time, 980, 1700)
+  );
+
+  const bridgeOpacity = clamp(bridgeEnter * (1 - bridgeExit));
+  const bridgeX =
+    lerp(-7, 0, bridgeEnter) +
+    lerp(0, 5, bridgeExit);
+  const bridgeScale =
+    lerp(1.03, 1, bridgeEnter) +
+    lerp(0, 0.018, bridgeExit);
+  const bridgeBlur =
+    lerp(14, 0, bridgeEnter) +
+    lerp(0, 12, bridgeExit);
+  const bridgeBrightness =
+    lerp(0.48, 1, bridgeEnter) *
+    lerp(1, 0.38, bridgeExit);
+
+  scene5Bridge.style.opacity = String(bridgeOpacity);
+  scene5Bridge.style.filter =
+    `blur(${bridgeBlur}px) brightness(${bridgeBrightness})`;
+  scene5Bridge.style.transform =
+    `translate3d(${bridgeX}vw, 0, 0) scale(${bridgeScale})`;
+
+  // 3. Scene 5 fallback: 왼쪽에서 흐릿하게 등장 → sharp.
+  const futureEnter = easeSmooth(
+    segmentProgress(time, 1450, SCENE5_TIMELINE.transitionEnd)
+  );
+
+  scene5Viewport.style.opacity = String(futureEnter);
   scene5Viewport.style.filter =
-    `blur(${lerp(12, 0, p)}px) brightness(${lerp(0.64, 1, p)})`;
-  scene5Viewport.style.opacity = String(lerp(0.62, 1, p));
+    `blur(${lerp(14, 0, futureEnter)}px) ` +
+    `brightness(${lerp(0.48, 1, futureEnter)})`;
+  scene5Viewport.style.transform =
+    `translate3d(${lerp(-7, 0, futureEnter)}vw, 0, 0)`;
 
-  // Scene 5 screen 자체의 배경은 전환 후반에만 서서히 생긴다.
-  // 초반에는 완전히 투명하므로 Scene 4의 마지막 프레임이 그대로 이어져 보인다.
-  const backdropP = easeSmooth(segmentProgress(p, 0.72, 1));
+  // 다음 장면이 거의 자리 잡은 후에만 screen의 기본 배경을 채운다.
+  const backdropP = easeSmooth(
+    segmentProgress(time, 1880, SCENE5_TIMELINE.transitionEnd)
+  );
   scene5Screen.style.background =
-    `rgba(3, 7, 13, ${lerp(0, 1, backdropP)})`;
+    `rgba(3, 7, 13, ${backdropP})`;
 
-  // 두 장면 사이를 지나가는 어두운 띠. 평면적인 검정 화면 대신 연결감을 준다.
-  const veilOpacity = Math.sin(Math.PI * clamp(p)) * 0.72;
-  scene5TransitionVeil.style.opacity = String(veilOpacity);
-  scene5TransitionVeil.style.transform =
-    `translate3d(${lerp(28, -20, p)}%, 0, 0) skewX(-7deg)`;
+  scene5TransitionVeil.style.opacity = "0";
 }
 
 function startScene5Video(token) {
@@ -2241,6 +2312,8 @@ function renderScene5(time) {
     scene5Viewport.style.transform = "translate3d(0, 0, 0)";
     scene5Viewport.style.filter = "blur(0px) brightness(1)";
     scene5Viewport.style.opacity = "1";
+    scene5Bridge.style.opacity = "0";
+    scene5Bridge.style.filter = "blur(12px) brightness(0.38)";
     scene5TransitionVeil.style.opacity = "0";
   }
 
