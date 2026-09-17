@@ -59,7 +59,7 @@ const SCENE4_ASSETS = [
 
 const SCENE5_VIDEO_SRC = "./assets/scene05-future/future-timelapse.mp4";
 const SCENE5_FALLBACK_SRC = "./assets/scene05-future/future-fallback.jpg";
-const SCENE5_BRIDGE_SRC = "./assets/scene05-future/scene4-5-bridge.png";
+const SCENE5_BRIDGE_SRC = "./assets/scene05-future/scene4-5-bridge-v22.png";
 
 const SCENE6_ASSETS = [
   "./assets/scene06-14/bg-teal.png",
@@ -264,7 +264,7 @@ const SCENE4_END = SCENE4_TIMELINE.preScene5HoldEnd;
 
 
 /* =======================================================
-   Scene 5 — 아직 오지 않은 미래 (v21)
+   Scene 5 — 아직 오지 않은 미래 (v22)
    -------------------------------------------------------
    중간 이미지를 "한 장의 전환 화면"으로 보여주지 않는다.
    원본 가로 비율을 유지한 파노라마로 배치하고,
@@ -887,7 +887,7 @@ function renderSubmissionSummary() {
   submissionSummary.innerHTML = "";
 
   [
-    ["닉네임", lastResponse?.nickname ?? "확인할 수 없음"],
+    ["이름", lastResponse?.nickname ?? "확인할 수 없음"],
     ["질문", lastResponse?.question ?? "확인할 수 없음"]
   ].forEach(([label, value]) => {
     const row = document.createElement("div");
@@ -3031,7 +3031,7 @@ function validateInputs() {
   const question = normalizeSingleLine(questionInput.value);
 
   if (nickname.length < 1 || nickname.length > 10) {
-    return { ok: false, message: "닉네임은 1~10자로 입력해주세요." };
+    return { ok: false, message: "이름은 1~10자로 입력해주세요." };
   }
 
   if (question.length < 1 || question.length > 20) {

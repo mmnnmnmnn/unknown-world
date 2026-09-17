@@ -222,8 +222,8 @@ function renderCurrentWinner() {
 
   currentWinnerQuestion.textContent = String(currentWinnerState.question ?? "");
   currentWinnerNickname.textContent = currentWinnerState.nickname
-    ? `닉네임: ${currentWinnerState.nickname}`
-    : "닉네임 정보 없음";
+    ? `이름: ${currentWinnerState.nickname}`
+    : "이름 정보 없음";
   currentWinnerCard.hidden = false;
 }
 

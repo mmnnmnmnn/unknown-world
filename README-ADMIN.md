@@ -63,3 +63,10 @@ Firebase Console → Authentication → Users → Add user
 - 기존 `responses` / `publicResponses` 데이터는 삭제되지 않습니다.
 - 참여했던 브라우저는 새 라운드를 감지하면 다시 질문을 제출할 수 있습니다.
 - 새 기능을 사용하려면 이번 `database.rules.json`으로 Realtime Database Rules를 다시 게시해야 합니다.
+
+
+## Admin v4 — 이름 표기
+- 응답 목록의 `닉네임` 표기를 `이름`으로 변경했습니다.
+- 검색 placeholder를 `이름·질문 검색`으로 변경했습니다.
+- 추첨 결과의 `닉네임:` 표기를 `이름:`으로 변경했습니다.
+- Firebase 내부 필드명 `nickname`은 기존 데이터와 호환되도록 유지합니다.
