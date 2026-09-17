@@ -647,23 +647,37 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 
 
-.scene5-bridge {
+.scene5-bridge-frame {
   position: absolute;
-  z-index: 1;
-  inset: 0;
-  margin: auto;
+  z-index: 2;
+  overflow: hidden;
   width: min(100vw, calc(100dvh * var(--scene-ratio)));
   height: min(100dvh, calc(100vw / var(--scene-ratio)));
   max-width: 100vw;
   max-height: 100dvh;
-  object-fit: fill;
+  opacity: 0;
+  background: #020705;
+  pointer-events: none;
+  will-change: opacity;
+  backface-visibility: hidden;
+}
+
+.scene5-bridge {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: auto;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  object-fit: contain;
   user-select: none;
   pointer-events: none;
-  opacity: 0;
-  filter: blur(14px) brightness(0.48);
-  transform: translate3d(-7vw, 0, 0) scale(1.03);
-  transform-origin: center;
-  will-change: transform, opacity, filter;
+  opacity: 1;
+  filter: blur(14px) brightness(0.42);
+  transform: translate3d(0, 0, 0) scale(1.015);
+  transform-origin: left center;
+  will-change: transform, filter;
   backface-visibility: hidden;
 }
 

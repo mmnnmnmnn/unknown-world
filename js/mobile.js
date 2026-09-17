@@ -264,19 +264,19 @@ const SCENE4_END = SCENE4_TIMELINE.preScene5HoldEnd;
 
 
 /* =======================================================
-   Scene 5 — 아직 오지 않은 미래 (v20)
+   Scene 5 — 아직 오지 않은 미래 (v21)
    -------------------------------------------------------
-   Scene 3 → 4 전환의 애니메이션 언어를 그대로 사용하되,
-   이동 방향만 오른쪽으로 회전해 적용한다.
+   중간 이미지를 "한 장의 전환 화면"으로 보여주지 않는다.
+   원본 가로 비율을 유지한 파노라마로 배치하고,
+   9:16 viewport가 그 이미지의 일부만 바라보게 한다.
 
-   0.00~0.85s : 심해가 오른쪽으로 이동 + blur/darken/fade
-   0.12~0.76s : 중간 통로 이미지가 왼쪽에서 blur → sharp로 진입
-   0.76~0.98s : 중간 이미지가 잠깐 선명하게 유지
-   0.98~1.70s : 중간 이미지가 오른쪽으로 이동 + blur/darken/fade
-   1.45~2.20s : Scene 5 fallback이 왼쪽에서 blur → sharp로 진입
-   2.20s      : 전환 완료 → 타임랩스 재생 시작
-   4.0~4.8s  : "아직 오지 않은 미래." blur → sharp
-   4.8~8.2s  : 문구 완전 표시 3.4초
+   0.00~0.78s : 심해 → 중간 이미지의 맨 왼쪽 검은 영역
+                blur + darken + fade로 전환
+   0.68~1.68s : 시점이 파노라마의 왼쪽 → 오른쪽으로 빠르게 이동
+                검정 → 짙은 녹색 → 밝은 녹색 순서로 화면이 열림
+   1.48~2.20s : 오른쪽의 밝은 영역에서 Scene 5 fallback으로
+                다시 blur/crossfade
+   2.20s      : 전환 완료 → 기존 타임랩스 영상 시작
 ======================================================= */
 const SCENE5_TIMELINE = {
   transitionEnd: 2200,
@@ -368,6 +368,7 @@ const scene4Corridor = document.querySelector("#scene4Corridor");
 const scene4Title = document.querySelector("#scene4Title");
 
 const scene5Viewport = document.querySelector("#scene5Viewport");
+const scene5BridgeFrame = document.querySelector("#scene5BridgeFrame");
 const scene5Bridge = document.querySelector("#scene5Bridge");
 const futureTimelapse = document.querySelector("#futureTimelapse");
 const futureFallback = document.querySelector("#futureFallback");
@@ -2126,20 +2127,44 @@ async function playScene4() {
 /* -------------------------------------------------------
    Scene 5 — 아직 오지 않은 미래
 ------------------------------------------------------- */
+function getScene5BridgePanDistance() {
+  const frameWidth =
+    scene5BridgeFrame.clientWidth ||
+    scene5Viewport.clientWidth ||
+    window.innerWidth;
+
+  const frameHeight =
+    scene5BridgeFrame.clientHeight ||
+    scene5Viewport.clientHeight ||
+    window.innerHeight;
+
+  const naturalRatio =
+    scene5Bridge.naturalWidth > 0 && scene5Bridge.naturalHeight > 0
+      ? scene5Bridge.naturalWidth / scene5Bridge.naturalHeight
+      : 2048 / 1092;
+
+  // CSS에서 height:100%, width:auto 이므로 실제 렌더 폭은 높이×원본비율.
+  const renderedWidth = frameHeight * naturalRatio;
+
+  // 오른쪽 끝까지 이동했을 때 viewport의 오른쪽과 이미지 오른쪽이 정확히 맞는다.
+  return Math.max(0, renderedWidth - frameWidth);
+}
+
 function resetScene5() {
   // Scene 4 마지막 프레임을 그대로 출발점으로 사용한다.
   scene5Screen.style.background = "rgba(3, 7, 13, 0)";
 
-  // 중간 통로는 왼쪽에서 들어올 준비.
-  scene5Bridge.style.opacity = "0";
-  scene5Bridge.style.filter = "blur(14px) brightness(0.48)";
+  // 중간 통로는 "왼쪽 검은 영역"만 보이는 상태에서 시작한다.
+  // 이미지 자체는 원본 가로비율을 유지해 viewport 밖으로 길게 뻗는다.
+  scene5BridgeFrame.style.opacity = "0";
+  scene5Bridge.style.filter = "blur(14px) brightness(0.42)";
   scene5Bridge.style.transform =
-    "translate3d(-7vw, 0, 0) scale(1.03)";
+    "translate3d(0px, 0, 0) scale(1.015)";
 
-  // Scene 5도 왼쪽에서 들어오며 blur → sharp.
+  // Scene 5는 오른쪽 밝은 영역에 도달한 뒤 blur → sharp로 겹쳐진다.
   scene5Viewport.style.opacity = "0";
-  scene5Viewport.style.transform = "translate3d(-7vw, 0, 0)";
-  scene5Viewport.style.filter = "blur(14px) brightness(0.48)";
+  scene5Viewport.style.transform = "translate3d(0, 0, 0)";
+  scene5Viewport.style.filter = "blur(14px) brightness(0.58)";
 
   // v20에서는 별도 띠 대신 실제 중간 이미지를 통로로 사용한다.
   scene5TransitionVeil.style.opacity = "0";
@@ -2175,78 +2200,95 @@ function resetScene5() {
 
 function renderScene5Transition(time) {
   /* -----------------------------------------------------
-     Scene 3 → 4 전환을 오른쪽 방향으로 회전한 버전.
-     1) Scene 4 exit
-     2) 실제 중간 이미지 corridor
-     3) Scene 5 fallback enter
-     각 경계마다 blur → sharp / sharp → blur가 겹친다.
+     v21
+     Scene 4 → 검은 파노라마 왼쪽 → 오른쪽으로 빠른 시점 이동
+     → 밝은 오른쪽 영역 → Scene 5 fallback.
   ----------------------------------------------------- */
 
-  // 1. 심해: 오른쪽으로 밀려나며 blur + darken + fade.
+  // 1) 심해 → 파노라마의 맨 왼쪽 검은 영역.
   const scene4Exit = easeSmooth(
-    segmentProgress(time, 0, 850)
+    segmentProgress(time, 0, 780)
   );
 
   scene4Viewport.style.transform =
-    `translate3d(${lerp(0, 18, scene4Exit)}vw, 0, 0) ` +
-    `scale(${lerp(1, 1.018, scene4Exit)})`;
+    `translate3d(${lerp(0, 15, scene4Exit)}vw, 0, 0) ` +
+    `scale(${lerp(1, 1.015, scene4Exit)})`;
 
   scene4Viewport.style.filter =
     `blur(${lerp(0, 12, scene4Exit)}px) ` +
-    `brightness(${lerp(1, 0.16, scene4Exit)})`;
+    `brightness(${lerp(1, 0.14, scene4Exit)})`;
 
   scene4Viewport.style.opacity = String(1 - scene4Exit);
 
-  const oldTitleFade = easeSmooth(segmentProgress(time, 0, 360));
+  const oldTitleFade = easeSmooth(
+    segmentProgress(time, 0, 340)
+  );
   scene4Title.style.opacity = String(1 - oldTitleFade);
   scene4Title.style.filter =
     `blur(${lerp(0, 5, oldTitleFade)}px)`;
 
-  // 2. 중간 이미지 진입: 왼쪽 → 오른쪽, blur → sharp.
+  // 중간 이미지의 검은 왼쪽 영역이 blur 상태에서 심해를 이어받는다.
   const bridgeEnter = easeSmooth(
-    segmentProgress(time, 120, 760)
+    segmentProgress(time, 80, 720)
+  );
+  scene5BridgeFrame.style.opacity = String(bridgeEnter);
+
+  // 2) 카메라가 긴 이미지 위를 왼쪽 → 오른쪽으로 이동.
+  // 실제로는 panorama 이미지를 왼쪽으로 밀어 viewport가 오른쪽을 보게 한다.
+  const panP = easeOutCubic(
+    segmentProgress(time, 680, 1680)
+  );
+  const panDistance = getScene5BridgePanDistance();
+  const panX = -panDistance * panP;
+
+  // 입구에서는 blur → sharp.
+  const entryBlurP = easeSmooth(
+    segmentProgress(time, 80, 650)
   );
 
-  // 중간 이미지 퇴장: 오른쪽으로 더 흐르며 sharp → blur/darken/fade.
-  const bridgeExit = easeSmooth(
-    segmentProgress(time, 980, 1700)
+  // 오른쪽 끝에서 Scene 5로 넘어가기 직전에 다시 blur.
+  const exitBlurP = easeSmooth(
+    segmentProgress(time, 1480, 2140)
   );
 
-  const bridgeOpacity = clamp(bridgeEnter * (1 - bridgeExit));
-  const bridgeX =
-    lerp(-7, 0, bridgeEnter) +
-    lerp(0, 5, bridgeExit);
-  const bridgeScale =
-    lerp(1.03, 1, bridgeEnter) +
-    lerp(0, 0.018, bridgeExit);
   const bridgeBlur =
-    lerp(14, 0, bridgeEnter) +
-    lerp(0, 12, bridgeExit);
-  const bridgeBrightness =
-    lerp(0.48, 1, bridgeEnter) *
-    lerp(1, 0.38, bridgeExit);
+    lerp(14, 0, entryBlurP) +
+    lerp(0, 13, exitBlurP);
 
-  scene5Bridge.style.opacity = String(bridgeOpacity);
+  const bridgeBrightness =
+    lerp(0.42, 1, entryBlurP) *
+    lerp(1, 0.72, exitBlurP);
+
+  // 미세한 scale만 유지해 edge seam을 방지한다.
+  const bridgeScale =
+    lerp(1.015, 1.025, panP);
+
+  scene5Bridge.style.transform =
+    `translate3d(${panX}px, 0, 0) scale(${bridgeScale})`;
+
   scene5Bridge.style.filter =
     `blur(${bridgeBlur}px) brightness(${bridgeBrightness})`;
-  scene5Bridge.style.transform =
-    `translate3d(${bridgeX}vw, 0, 0) scale(${bridgeScale})`;
 
-  // 3. Scene 5 fallback: 왼쪽에서 흐릿하게 등장 → sharp.
+  // 3) 오른쪽의 밝은 영역부터 Scene 5 첫 프레임으로 blur/crossfade.
   const futureEnter = easeSmooth(
-    segmentProgress(time, 1450, SCENE5_TIMELINE.transitionEnd)
+    segmentProgress(time, 1500, SCENE5_TIMELINE.transitionEnd)
   );
 
   scene5Viewport.style.opacity = String(futureEnter);
   scene5Viewport.style.filter =
     `blur(${lerp(14, 0, futureEnter)}px) ` +
-    `brightness(${lerp(0.48, 1, futureEnter)})`;
-  scene5Viewport.style.transform =
-    `translate3d(${lerp(-7, 0, futureEnter)}vw, 0, 0)`;
+    `brightness(${lerp(0.58, 1, futureEnter)})`;
+  scene5Viewport.style.transform = "translate3d(0, 0, 0)";
 
-  // 다음 장면이 거의 자리 잡은 후에만 screen의 기본 배경을 채운다.
+  // Scene 5가 선명해질수록 panorama는 fade out.
+  const bridgeFadeOut = easeSmooth(
+    segmentProgress(time, 1620, SCENE5_TIMELINE.transitionEnd)
+  );
+  scene5BridgeFrame.style.opacity =
+    String(bridgeEnter * (1 - bridgeFadeOut));
+
   const backdropP = easeSmooth(
-    segmentProgress(time, 1880, SCENE5_TIMELINE.transitionEnd)
+    segmentProgress(time, 1920, SCENE5_TIMELINE.transitionEnd)
   );
   scene5Screen.style.background =
     `rgba(3, 7, 13, ${backdropP})`;
@@ -2312,8 +2354,8 @@ function renderScene5(time) {
     scene5Viewport.style.transform = "translate3d(0, 0, 0)";
     scene5Viewport.style.filter = "blur(0px) brightness(1)";
     scene5Viewport.style.opacity = "1";
-    scene5Bridge.style.opacity = "0";
-    scene5Bridge.style.filter = "blur(12px) brightness(0.38)";
+    scene5BridgeFrame.style.opacity = "0";
+    scene5Bridge.style.filter = "blur(13px) brightness(0.72)";
     scene5TransitionVeil.style.opacity = "0";
   }
 
