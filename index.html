@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="color-scheme" content="dark" />
   <title>데이터 너머, 미지의 세계</title>
-  <link rel="stylesheet" href="./css/common.css?v=mobile-v22-scene4-5-bridge-image" />
+  <link rel="stylesheet" href="./css/common.css?v=mobile-v24-skip-firebase-lite" />
 </head>
 <body class="mobile-page">
   <main id="mobileApp" class="mobile-app">
@@ -244,9 +244,30 @@
           <p id="scene13Q3" class="scene13-question q3">1년 뒤 삼성전자 주가?</p>
         </div>
 
-        <div class="scene-debug-badge">SCENE 6–13 · V18</div>
+        <div class="scene-debug-badge">SCENE 6–13 · V24 SKIP</div>
       </div>
     </section>
+
+    <div id="skipControl" class="skip-control" hidden>
+      <button id="skipButton" class="skip-button" type="button">
+        건너뛰기 <span aria-hidden="true">›</span>
+      </button>
+    </div>
+
+    <div id="skipConfirm" class="skip-confirm" hidden>
+      <div
+        class="skip-confirm-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="skipConfirmTitle"
+      >
+        <p id="skipConfirmTitle" class="skip-confirm-title">영상을 건너뛸까요?</p>
+        <div class="skip-confirm-actions">
+          <button id="skipNoButton" class="skip-confirm-button skip-confirm-no" type="button">아니오</button>
+          <button id="skipYesButton" class="skip-confirm-button skip-confirm-yes" type="button">예</button>
+        </div>
+      </div>
+    </div>
 
     <section id="scene14Screen" class="app-screen form-screen" hidden>
       <div class="form-shell">
@@ -298,6 +319,6 @@
 
   </main>
 
-  <script type="module" src="./js/mobile.js?v=mobile-v23-name-label"></script>
+  <script type="module" src="./js/mobile.js?v=mobile-v24-skip-firebase-lite"></script>
 </body>
 </html>

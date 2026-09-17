@@ -4,7 +4,9 @@ import {
   ref,
   push,
   update,
-  onValue,
+  get,
+  goOnline,
+  goOffline,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js";
 
@@ -442,6 +444,12 @@ const completedTitle = document.querySelector("#completedTitle");
 const submissionSummary = document.querySelector("#submissionSummary");
 const replayButton = document.querySelector("#replayButton");
 
+const skipControl = document.querySelector("#skipControl");
+const skipButton = document.querySelector("#skipButton");
+const skipConfirm = document.querySelector("#skipConfirm");
+const skipYesButton = document.querySelector("#skipYesButton");
+const skipNoButton = document.querySelector("#skipNoButton");
+
 let db = null;
 let currentParticipationVersion = 0;
 let participationVersionReady = false;
@@ -547,17 +555,45 @@ function initializeFirebase() {
   db = getDatabase(app);
   scene14Warning.hidden = true;
 
-  onValue(
-    ref(db, "participationState/version"),
-    (snapshot) => {
-      reconcileParticipationVersion(snapshot.val() ?? 0);
-    },
-    (error) => {
-      console.warn("참여 라운드 정보를 불러오지 못했습니다:", error);
-      participationVersionReady = true;
-      currentParticipationVersion = 0;
+  // 참가자 모바일은 88초 애니메이션 동안 Realtime Database 연결을
+  // 계속 유지하지 않는다. 처음 접속할 때 한 번만 라운드 정보를 확인하고
+  // 확인이 끝나면 즉시 offline 상태로 되돌린다.
+  refreshParticipationVersionOnce().catch((error) => {
+    console.warn("초기 참여 라운드 확인 실패:", error);
+  });
+}
+
+async function refreshParticipationVersionOnce({
+  keepOnline = false,
+  throwOnError = false
+} = {}) {
+  if (!db) {
+    if (throwOnError) {
+      throw new Error("Firebase database is not initialized.");
     }
-  );
+    return currentParticipationVersion;
+  }
+
+  goOnline(db);
+
+  try {
+    const snapshot = await get(ref(db, "participationState/version"));
+    reconcileParticipationVersion(snapshot.val() ?? 0);
+    return currentParticipationVersion;
+  } catch (error) {
+    console.warn("참여 라운드 정보를 불러오지 못했습니다:", error);
+    participationVersionReady = true;
+
+    if (throwOnError) {
+      throw error;
+    }
+
+    return currentParticipationVersion;
+  } finally {
+    if (!keepOnline) {
+      goOffline(db);
+    }
+  }
 }
 
 /* -------------------------------------------------------
@@ -807,6 +843,50 @@ window.addEventListener("orientationchange", () => {
 });
 
 /* -------------------------------------------------------
+   Skip control — Scene 7부터 이어보기
+------------------------------------------------------- */
+function showSkipControl() {
+  skipControl.hidden = false;
+}
+
+function closeSkipConfirm() {
+  skipConfirm.hidden = true;
+}
+
+function hideSkipControl() {
+  skipControl.hidden = true;
+  closeSkipConfirm();
+}
+
+function openSkipConfirm() {
+  if (skipControl.hidden) return;
+  skipConfirm.hidden = false;
+}
+
+function stopNarrativeForSkip() {
+  // stopScene1()은 activeSceneToken도 갱신하므로
+  // 진행 중이거나 preload 후 재개하려던 이전 장면 체인까지 모두 무효화된다.
+  stopScene1();
+  stopScene23();
+  stopScene4();
+  stopScene5();
+  stopScene6();
+  stopScene14Intro();
+}
+
+async function skipToScene7() {
+  hideSkipControl();
+  stopNarrativeForSkip();
+
+  // Scene 7은 Scene 6~13 시퀀스 내부에 있으므로
+  // Scene 7의 시작 시각(타이핑 직전 300ms)에서 재생을 시작한다.
+  await playScene6Sequence({
+    startAt: SCENE6_TIMELINE.scene7Start,
+    directEntry: true
+  });
+}
+
+/* -------------------------------------------------------
    화면 전환
 ------------------------------------------------------- */
 function showOnly(screen) {
@@ -824,6 +904,7 @@ function showOnly(screen) {
 }
 
 function renderStartScreen() {
+  hideSkipControl();
   stopScene1();
   stopScene23();
   stopScene4();
@@ -852,6 +933,7 @@ function prepareScene14Ready({ focusQuestion = false } = {}) {
 }
 
 function renderScene14() {
+  hideSkipControl();
   stopScene1();
   stopScene23();
   stopScene4();
@@ -2769,6 +2851,12 @@ function scene6Loop(now, token) {
   if (!scene6Running || token !== activeSceneToken) return;
   const elapsed = now - scene6StartTime;
   const time = Math.min(elapsed, SCENE6_END);
+
+  // Scene 7이 시작되는 순간부터는 건너뛰기 버튼/확인창을 자동 제거한다.
+  if (time >= SCENE6_TIMELINE.scene7Start && !skipControl.hidden) {
+    hideSkipControl();
+  }
+
   renderScene6Sequence(time);
 
   if (time >= SCENE6_TIMELINE.transitionEnd && !scene5Screen.hidden) {
@@ -2788,7 +2876,10 @@ function scene6Loop(now, token) {
   scene6RafId = requestAnimationFrame((nextNow) => scene6Loop(nextNow, token));
 }
 
-async function playScene6Sequence() {
+async function playScene6Sequence({
+  startAt = 0,
+  directEntry = false
+} = {}) {
   stopScene6();
   const token = activeSceneToken;
 
@@ -2802,10 +2893,27 @@ async function playScene6Sequence() {
   }
   if (token !== activeSceneToken) return;
 
+  const safeStartAt = clamp(
+    Number(startAt) || 0,
+    0,
+    SCENE6_END
+  );
+
   resetScene6Sequence();
-  scene6Screen.hidden = false;
+
+  if (directEntry) {
+    // 이전 Scene을 완전히 숨긴 뒤 청록 배경의 Scene 7 시작 상태로 즉시 진입.
+    showOnly("scene6");
+  } else {
+    scene6Screen.hidden = false;
+  }
+
+  // 첫 RAF 전에도 원하는 타임스탬프의 화면을 즉시 렌더링해
+  // 검은/빈 한 프레임이 보이지 않게 한다.
+  renderScene6Sequence(safeStartAt);
+
   scene6Running = true;
-  scene6StartTime = performance.now();
+  scene6StartTime = performance.now() - safeStartAt;
   scene6RafId = requestAnimationFrame((now) => scene6Loop(now, token));
 }
 
@@ -2874,6 +2982,7 @@ function scene14IntroLoop(now, token) {
 }
 
 function playScene14Intro() {
+  hideSkipControl();
   stopScene14Intro();
   stopScene6();
   const token = activeSceneToken;
@@ -3049,11 +3158,6 @@ form.addEventListener("submit", async (event) => {
     return;
   }
 
-  if (isCompletedBrowser()) {
-    showCompletedPanel("이미 참여가 완료된 브라우저입니다.");
-    return;
-  }
-
   const validation = validateInputs();
   if (!validation.ok) {
     formMessage.textContent = validation.message;
@@ -3064,9 +3168,24 @@ form.addEventListener("submit", async (event) => {
   questionInput.value = validation.question;
 
   submitButton.disabled = true;
-  formMessage.textContent = "저장 중입니다…";
+  formMessage.textContent = "참여 상태를 확인하는 중입니다…";
 
   try {
+    // 애니메이션 재생 중에는 offline 상태를 유지하다가,
+    // 제출 직전에 최신 participationVersion을 한 번 더 확인한다.
+    // keepOnline=true로 같은 짧은 연결을 바로 아래 write까지 재사용한다.
+    await refreshParticipationVersionOnce({
+      keepOnline: true,
+      throwOnError: true
+    });
+
+    if (isCompletedBrowser()) {
+      showCompletedPanel("이미 참여가 완료된 브라우저입니다.");
+      return;
+    }
+
+    formMessage.textContent = "저장 중입니다…";
+
     const responseId = push(ref(db, "responses")).key;
     if (!responseId) throw new Error("responseId 생성 실패");
 
@@ -3097,8 +3216,14 @@ form.addEventListener("submit", async (event) => {
     showCompletedPanel("제출이 완료되었습니다.");
   } catch (error) {
     console.error("응답 저장 실패:", error);
-    formMessage.textContent = "저장에 실패했습니다. 입력 내용은 유지됩니다. 다시 제출해주세요.";
+    formMessage.textContent =
+      "연결 또는 저장에 실패했습니다. 입력 내용은 유지됩니다. 다시 제출해주세요.";
     submitButton.disabled = false;
+  } finally {
+    // 모바일 참가자는 제출이 끝난 뒤에도 실시간 연결을 유지하지 않는다.
+    if (db) {
+      goOffline(db);
+    }
   }
 });
 
@@ -3125,7 +3250,40 @@ enterButton.addEventListener("click", async () => {
   enterButton.classList.remove("is-loading");
   enterButton.disabled = false;
 
+  showSkipControl();
   await playScene1();
+});
+
+skipButton.addEventListener("click", () => {
+  openSkipConfirm();
+});
+
+skipNoButton.addEventListener("click", () => {
+  closeSkipConfirm();
+});
+
+skipYesButton.addEventListener("click", async () => {
+  skipYesButton.disabled = true;
+  skipNoButton.disabled = true;
+
+  try {
+    await skipToScene7();
+  } finally {
+    skipYesButton.disabled = false;
+    skipNoButton.disabled = false;
+  }
+});
+
+skipConfirm.addEventListener("click", (event) => {
+  if (event.target === skipConfirm) {
+    closeSkipConfirm();
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !skipConfirm.hidden) {
+    closeSkipConfirm();
+  }
 });
 
 replayButton.addEventListener("click", () => {
