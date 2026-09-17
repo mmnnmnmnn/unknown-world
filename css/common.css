@@ -1425,3 +1425,9 @@ button { -webkit-tap-highlight-color: transparent; }
   opacity: .5;
   cursor: wait;
 }
+
+
+/* V25 — production UI: 개발용 Scene/버전 배지는 DOM에 유지하되 화면에서는 숨김 */
+.scene-debug-badge {
+  display: none !important;
+}
