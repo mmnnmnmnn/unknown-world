@@ -2,7 +2,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/fireba
 import {
   getDatabase,
   ref,
-  onValue
+  onValue,
+  query,
+  orderByChild,
+  limitToLast
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js";
 
 import {
@@ -11,10 +14,10 @@ import {
 } from "../js/firebase-config.js";
 
 const NEW_QUESTION_HIGHLIGHT_MS = 4000;
+const DISPLAY_LIMIT = 100;
 const SAFE_X = 43;
-const SAFE_Y = 38;
+const SAFE_Y = 34;
 
-const appRoot = document.querySelector("#displayApp");
 const questionField = document.querySelector("#questionField");
 const emptyState = document.querySelector("#emptyState");
 const newQuestionOverlay = document.querySelector("#newQuestionOverlay");
@@ -22,13 +25,12 @@ const newQuestionText = document.querySelector("#newQuestionText");
 const connectionState = document.querySelector("#connectionState");
 const connectionText = document.querySelector("#connectionText");
 const configWarning = document.querySelector("#configWarning");
-const winnerOverlay = document.querySelector("#winnerOverlay");
-const winnerQuestion = document.querySelector("#winnerQuestion");
 
 const nodes = new Map();
 let firstSnapshotReceived = false;
 let highlightTimer = 0;
-let winnerTimer = 0;
+let currentRecords = [];
+let latestSeenRecord = null;
 
 function setConnectionState(state) {
   connectionState.dataset.state = state;
@@ -38,23 +40,28 @@ function setConnectionState(state) {
       : state === "offline"
         ? "연결 끊김"
         : "연결 확인 중";
+
+  if (state === "online" && isFirebaseConfigured) {
+    configWarning.hidden = true;
+  }
 }
 
 function normalizeRecord(id, raw = {}) {
   return {
     id,
     question: String(raw.question ?? "").trim(),
-    createdAt: Number(raw.createdAt ?? 0),
-    winner: Boolean(raw.winner)
+    createdAt: Number(raw.createdAt ?? 0)
   };
 }
 
+function compareRecords(a, b) {
+  const timeDiff = a.createdAt - b.createdAt;
+  if (timeDiff !== 0) return timeDiff;
+  return a.id.localeCompare(b.id);
+}
+
 function sortRecords(records) {
-  return [...records].sort((a, b) => {
-    const timeDiff = a.createdAt - b.createdAt;
-    if (timeDiff !== 0) return timeDiff;
-    return a.id.localeCompare(b.id);
-  });
+  return [...records].sort(compareRecords);
 }
 
 function hashString(value) {
@@ -82,8 +89,7 @@ function getTextSize(count) {
   if (count <= 30) return 28;
   if (count <= 50) return 24;
   if (count <= 80) return 21;
-  if (count <= 120) return 19;
-  return 18;
+  return 19;
 }
 
 function getNodeMaxWidth(count) {
@@ -92,16 +98,14 @@ function getNodeMaxWidth(count) {
   if (count <= 30) return 28;
   if (count <= 50) return 23;
   if (count <= 80) return 19;
-  if (count <= 120) return 16;
-  return 14;
+  return 16;
 }
 
 function computePosition(record, index, count) {
   if (count <= 1) {
-    return { x: 50, y: 50 };
+    return { x: 50, y: 48 };
   }
 
-  // Golden-angle spiral: deterministic, evenly dispersed, and expands as questions accumulate.
   const t = index / Math.max(1, count - 1);
   const radius = Math.sqrt(t);
   const goldenAngle = Math.PI * (3 - Math.sqrt(5));
@@ -109,11 +113,11 @@ function computePosition(record, index, count) {
   const angle = index * goldenAngle + jitter;
 
   const x = 50 + Math.cos(angle) * SAFE_X * radius;
-  const y = 50 + Math.sin(angle) * SAFE_Y * radius;
+  const y = 47 + Math.sin(angle) * SAFE_Y * radius;
 
   return {
     x: clamp(x, 5, 95),
-    y: clamp(y, 7, 93)
+    y: clamp(y, 7, 86)
   };
 }
 
@@ -139,7 +143,7 @@ function updateNodeText(node, record) {
   }
 }
 
-function layoutNodes(records) {
+function layoutNodes(records = currentRecords) {
   const count = records.length;
   const textSize = getTextSize(count);
   const maxWidth = getNodeMaxWidth(count);
@@ -188,13 +192,11 @@ function syncSnapshot(snapshot) {
     Object.entries(raw)
       .map(([id, data]) => normalizeRecord(id, data))
       .filter((record) => record.question.length > 0)
-  );
+  ).slice(-DISPLAY_LIMIT);
 
   const nextIds = new Set(nextRecords.map((record) => record.id));
-  const previousIds = new Set(nodes.keys());
-  const addedIds = [];
+  const addedRecords = [];
 
-  // Remove deleted responses immediately.
   for (const [id, node] of nodes.entries()) {
     if (!nextIds.has(id)) {
       node.remove();
@@ -202,73 +204,39 @@ function syncSnapshot(snapshot) {
     }
   }
 
-  // Add/update current responses.
   for (const record of nextRecords) {
     let node = nodes.get(record.id);
     if (!node) {
       node = createNode(record);
-      addedIds.push(record.id);
+      addedRecords.push(record);
     }
     updateNodeText(node, record);
   }
 
-  layoutNodes(nextRecords);
+  currentRecords = nextRecords;
+  layoutNodes();
 
-  // Initial database hydration should appear calmly, not as dozens of new-question alerts.
-  if (firstSnapshotReceived && addedIds.length > 0) {
-    const newestAdded = nextRecords
-      .filter((record) => addedIds.includes(record.id))
-      .sort((a, b) => b.createdAt - a.createdAt)[0];
+  const newest = nextRecords.at(-1) ?? null;
 
-    if (newestAdded) {
-      markAsNew(newestAdded.id);
-      showNewQuestionOverlay(newestAdded.question);
-    }
-  }
-
-  firstSnapshotReceived = true;
-
-  // If the snapshot only updated existing records, preserve the current visual state.
-  if (previousIds.size === 0 && nodes.size > 0) {
-    requestAnimationFrame(() => layoutNodes(nextRecords));
-  }
-}
-
-
-function clearWinnerOverlay() {
-  window.clearTimeout(winnerTimer);
-  winnerTimer = 0;
-  winnerOverlay.hidden = true;
-  winnerQuestion.textContent = "";
-  appRoot.classList.remove("is-winner");
-}
-
-function syncWinnerState(snapshot) {
-  const state = snapshot.val();
-
-  if (!state || state.active !== true || !state.question) {
-    clearWinnerOverlay();
+  if (!firstSnapshotReceived) {
+    latestSeenRecord = newest;
+    firstSnapshotReceived = true;
     return;
   }
 
-  const expiresAt = Number(state.expiresAt ?? 0);
-  const remaining = expiresAt > 0
-    ? expiresAt - Date.now()
-    : 15000;
+  const trulyNew = addedRecords
+    .filter((record) => !latestSeenRecord || compareRecords(record, latestSeenRecord) > 0)
+    .sort(compareRecords);
 
-  if (remaining <= 0) {
-    clearWinnerOverlay();
-    return;
+  const newestAdded = trulyNew.at(-1);
+  if (newestAdded) {
+    markAsNew(newestAdded.id);
+    showNewQuestionOverlay(newestAdded.question);
   }
 
-  window.clearTimeout(winnerTimer);
-  winnerQuestion.textContent = String(state.question);
-  winnerOverlay.hidden = false;
-  appRoot.classList.add("is-winner");
-
-  winnerTimer = window.setTimeout(() => {
-    clearWinnerOverlay();
-  }, remaining);
+  if (newest && (!latestSeenRecord || compareRecords(newest, latestSeenRecord) > 0)) {
+    latestSeenRecord = newest;
+  }
 }
 
 function initialize() {
@@ -285,8 +253,14 @@ function initialize() {
     setConnectionState(snapshot.val() === true ? "online" : "offline");
   });
 
-  onValue(
+  const latestQuestionsQuery = query(
     ref(db, "publicResponses"),
+    orderByChild("createdAt"),
+    limitToLast(DISPLAY_LIMIT)
+  );
+
+  onValue(
+    latestQuestionsQuery,
     syncSnapshot,
     () => {
       setConnectionState("offline");
@@ -295,13 +269,9 @@ function initialize() {
     }
   );
 
-  onValue(
-    ref(db, "displayState/currentWinner"),
-    syncWinnerState,
-    () => {
-      clearWinnerOverlay();
-    }
-  );
+  window.addEventListener("resize", () => {
+    requestAnimationFrame(() => layoutNodes());
+  });
 }
 
 initialize();

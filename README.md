@@ -1,48 +1,66 @@
-# unknown-world-clean-v22-scene4-5-bridge-image
+# Unknown World v26 — 상시운영형 통합본
 
-변경 사항
-- Scene 4 → 5 전환용 통로 이미지를 새 이미지로 교체했습니다.
-- 기존 전환 로직/애니메이션은 유지했습니다.
-- 브라우저 캐시로 이전 통로 이미지가 남지 않도록 파일명을 `scene4-5-bridge-v22.png`로 변경하고, `js/mobile.js`에서 해당 파일을 읽도록 수정했습니다.
-- `index.html`의 캐시 버전 문자열도 `mobile-v22-scene4-5-bridge-image`로 갱신했습니다.
+`v25-hide-debug-badges`를 기준으로 상시 전시 운영 구조로 개편한 버전입니다.
+기존 Scene 1~14 애니메이션, Scene 7 건너뛰기 진입, Scene 14 키보드 안정화 로직은 유지했습니다.
 
-덮어쓰기 필요 파일
-- `index.html`
-- `js/mobile.js`
-- `assets/scene05-future/scene4-5-bridge-v22.png`
+## 모바일 `/`
+- 이름 입력 제거: 질문만 익명 제출
+- 질문 최대 35자
+- 제출 경로: 브라우저 → Cloudflare Worker `/submit` → Firebase
+- 브라우저당 KST 기준 하루 1회 참여
+  - Firebase `.info/serverTimeOffset`을 이용해 서버 시간 기준을 우선 사용
+  - 서버 시간 확인 실패 시 기기 KST로 폴백
+- 안내 문구: `부적절한 내용이 포함된 질문은 표시되지 않을 수 있습니다.`
+- 승인/차단/보류 여부와 관계없이 질문이 서버에 정상 접수되면 해당 브라우저는 그날 참여 완료 처리
+- 다음 날 KST 00:00 이후 자동으로 다시 참여 가능
 
-비고
-- 기존 `scene4-5-bridge.png`는 폴더에 남아 있어도 동작에는 문제 없습니다. 현재 코드는 `scene4-5-bridge-v22.png`만 사용합니다.
+Worker URL:
+`https://unknown-world-moderation.oja34.workers.dev/submit`
 
+## 대형 화면 `/display/`
+- 추첨/당첨자 기능 완전 제거
+- `publicResponses` 중 `createdAt` 기준 최신 100개만 실시간 구독
+- 101번째 질문이 추가되면 가장 오래된 질문은 화면 DOM에서 자동 제외되며 원본 DB에는 남음
+- 신규 질문은 기존처럼 중앙에서 약 4초간 크게 표시된 뒤 질문장에 합류
+- Firebase 재연결은 SDK 실시간 listener가 자동 처리
+- 화면 DOM은 최대 100개 질문으로 제한
+- 중앙 하단 고정 문구: `관람객이 남기고 간 질문들`
+  - Windows `Gungsuh/궁서` 우선, 없으면 `Batang/바탕`, serif 폴백
 
-## Mobile v23 — 닉네임 → 이름 표기 변경
-- 마지막 입력 페이지의 사용자 표기를 `닉네임`에서 `이름`으로 변경했습니다.
-- 유효성 안내 문구도 `이름은 1~10자로 입력해주세요.`로 변경했습니다.
-- 기존 Firebase 내부 필드명 `nickname`은 호환성을 위해 그대로 유지합니다.
+## 관리자 `/admin/`
+- 추첨/테스트데이터/참여라운드 기능 제거
+- 전체 질문 원본 조회
+- 승인 / 차단 / 보류 / 관리자 숨김 통계 및 필터
+- 날짜 범위, 질문·판정 사유 검색
+- 숨김: `responses/{id}/hidden = true`, `publicResponses/{id}`만 제거
+- 영구삭제: `responses`와 `publicResponses` 모두 삭제
+- 숨김 복원 기능 없음
+- 현재 필터 결과 CSV 다운로드
+- CSV 수식 실행 위험을 줄이기 위해 `=`, `+`, `-`, `@`로 시작하는 셀은 안전 처리
 
+## Firebase 데이터 구조
+### `responses/{id}`
+모든 제출 원본과 검열 상태를 저장합니다.
 
-## Mobile v24 — 건너뛰기 + 참가자 Firebase 연결 경량화
+주요 필드:
+- `question`
+- `createdAt`
+- `kstDate`
+- `moderationStatus`: `approved | blocked | pending`
+- `moderationReasonCode`
+- `moderationReason`
+- `moderationSource`
+- `moderatedAt`
+- `hidden`
 
-### 건너뛰기
-- Scene 1부터 Scene 6까지 화면 중앙 하단 약 `(50,80)`에 `건너뛰기 ›` 버튼을 표시합니다.
-- 버튼을 누르면 `영상을 건너뛸까요?` custom 확인창이 표시됩니다.
-- 확인창은 브라우저 native `confirm()`을 사용하지 않으므로, 확인창이 떠 있는 동안에도 애니메이션은 계속 재생됩니다.
-- `예`를 누르면 기존 Scene 번호/구조를 유지한 채 Scene 7 시작 시각으로 이동합니다.
-- Scene 7은 `당신이 알고 싶은 / 미지의 세계는 어디인가요?` 타이핑 직전부터 정상적으로 재생됩니다.
-- 자연 재생으로 Scene 7에 도달한 경우 건너뛰기 버튼과 열려 있던 확인창은 자동으로 사라집니다.
-- Scene 7부터 Scene 14까지 남은 재생시간은 약 28.7초입니다.
+### `publicResponses/{id}`
+검열 통과 + 관리자 숨김이 아닌 질문만 존재합니다.
+- `question`
+- `createdAt`
 
-### 모바일 Firebase 연결 경량화
-- 참가자 모바일은 더 이상 `participationState/version`에 상시 `onValue` listener를 유지하지 않습니다.
-- 페이지 최초 접속 시 참여 라운드를 한 번 `get()`한 뒤 `goOffline()`합니다.
-- 약 88초 애니메이션 재생 동안 Firebase Realtime Database 연결을 계속 점유하지 않습니다.
-- 제출 버튼을 누른 직전에 다시 `goOnline()`하여 최신 참여 라운드를 한 번 확인합니다.
-- 같은 짧은 연결로 응답을 저장한 뒤 즉시 `goOffline()`합니다.
-- `/display/`와 `/admin/`의 실시간 연결 방식은 변경하지 않았습니다.
-- 관리자가 참여 제한을 초기화해도 이미 제출 완료 화면을 열어둔 브라우저가 즉시 자동 변경되지는 않습니다. 새로고침/재접속 시 최신 라운드를 확인합니다.
+## 배포
+GitHub 저장소 루트에 이 폴더의 **내용물**을 업로드/덮어쓰기 합니다.
+폴더 자체를 한 단계 더 중첩해 올리지 마세요.
 
-
-## Mobile v25 — 개발용 Scene/버전 배지 숨김
-- 좌측 상단의 `SCENE 1 · ...`, `SCENE 5 · ...` 등 개발용 디버그 배지를 화면에서 숨겼습니다.
-- 배지 HTML 자체는 삭제하지 않고 유지하여, 향후 현장 디버깅 시 CSS 한 줄만 바꾸면 다시 표시할 수 있습니다.
-- 애니메이션, 타이밍, Firebase, 건너뛰기 기능에는 변경이 없습니다.
+`database.rules.json`은 GitHub Pages가 자동 적용하지 않습니다.
+Firebase Console → Realtime Database → Rules에서 별도로 게시해야 합니다.

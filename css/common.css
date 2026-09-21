@@ -1431,3 +1431,36 @@ button { -webkit-tap-highlight-color: transparent; }
 .scene-debug-badge {
   display: none !important;
 }
+
+
+/* =======================================================
+   V26 — Permanent exhibition form
+   이름 입력 제거 / 35자 질문 / moderation 안내
+   기존 Scene 14 viewport·keyboard stabilization은 유지한다.
+   ======================================================= */
+.question-stage {
+  top: 53.5%;
+  width: min(72%, 315px);
+}
+
+.submit-button {
+  top: 66.5%;
+}
+
+.form-message {
+  top: 71.5%;
+}
+
+.moderation-notice {
+  position: absolute;
+  left: 50%;
+  top: 77%;
+  width: min(82%, 350px);
+  margin: 0;
+  transform: translateX(-50%);
+  color: rgba(255,255,255,.58);
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+}

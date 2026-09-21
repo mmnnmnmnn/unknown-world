@@ -2,12 +2,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/fireba
 import {
   getDatabase,
   ref,
-  push,
-  update,
   get,
   goOnline,
-  goOffline,
-  serverTimestamp
+  goOffline
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js";
 
 import {
@@ -44,9 +41,9 @@ window.addEventListener("unhandledrejection", (event) => {
   }
 });
 
-const STORAGE_KEY = "unknown-world-submission-complete";
-const LAST_RESPONSE_KEY = "unknown-world-last-response";
-const PARTICIPATION_VERSION_KEY = "unknown-world-participation-version";
+const LAST_RESPONSE_KEY = "unknown-world-last-response-v2";
+const PARTICIPATION_DATE_KEY = "unknown-world-daily-kst-date-v1";
+const MODERATION_WORKER_URL = "https://unknown-world-moderation.oja34.workers.dev";
 
 const SCENE23_ASSETS = [
   "./assets/scene03-galaxy-cluster/galaxy-cluster-bg.png"
@@ -434,7 +431,6 @@ const decorativeElements = [
 ];
 
 const form = document.querySelector("#responseForm");
-const nicknameInput = document.querySelector("#nickname");
 const questionInput = document.querySelector("#question");
 const submitButton = document.querySelector("#submitButton");
 const formMessage = document.querySelector("#formMessage");
@@ -451,8 +447,8 @@ const skipYesButton = document.querySelector("#skipYesButton");
 const skipNoButton = document.querySelector("#skipNoButton");
 
 let db = null;
-let currentParticipationVersion = 0;
-let participationVersionReady = false;
+let serverTimeOffsetMs = 0;
+let serverClockReady = false;
 
 let scene14ViewportLocked = false;
 let scene14BaseViewportWidth = 0;
@@ -542,12 +538,15 @@ function setFootTransform(element, extra = "") {
 }
 
 /* -------------------------------------------------------
-   Firebase
+   Firebase server clock / daily participation
 ------------------------------------------------------- */
 function initializeFirebase() {
+  // 제출 자체는 Cloudflare Worker를 사용한다. Firebase 클라이언트 연결은
+  // KST 하루 1회 제한을 위해 서버 시간 오프셋을 한 번 읽는 용도로만 사용한다.
   if (!isFirebaseConfigured) {
-    submitButton.disabled = true;
-    scene14Warning.hidden = false;
+    db = null;
+    serverClockReady = false;
+    scene14Warning.hidden = true;
     return;
   }
 
@@ -555,72 +554,60 @@ function initializeFirebase() {
   db = getDatabase(app);
   scene14Warning.hidden = true;
 
-  // 참가자 모바일은 88초 애니메이션 동안 Realtime Database 연결을
-  // 계속 유지하지 않는다. 처음 접속할 때 한 번만 라운드 정보를 확인하고
-  // 확인이 끝나면 즉시 offline 상태로 되돌린다.
-  refreshParticipationVersionOnce().catch((error) => {
-    console.warn("초기 참여 라운드 확인 실패:", error);
-  });
+  refreshServerClockOnce()
+    .then(() => refreshDailyParticipationUi())
+    .catch((error) => {
+      console.warn("Firebase 서버 시간 확인 실패, 기기 시간으로 대체:", error);
+      refreshDailyParticipationUi();
+    });
 }
 
-async function refreshParticipationVersionOnce({
-  keepOnline = false,
-  throwOnError = false
-} = {}) {
+async function refreshServerClockOnce({ throwOnError = false } = {}) {
   if (!db) {
-    if (throwOnError) {
-      throw new Error("Firebase database is not initialized.");
-    }
-    return currentParticipationVersion;
+    serverClockReady = false;
+    if (throwOnError) throw new Error("Firebase database is not initialized.");
+    return serverTimeOffsetMs;
   }
 
   goOnline(db);
 
   try {
-    const snapshot = await get(ref(db, "participationState/version"));
-    reconcileParticipationVersion(snapshot.val() ?? 0);
-    return currentParticipationVersion;
+    const snapshot = await get(ref(db, ".info/serverTimeOffset"));
+    const offset = Number(snapshot.val());
+    serverTimeOffsetMs = Number.isFinite(offset) ? offset : 0;
+    serverClockReady = true;
+    return serverTimeOffsetMs;
   } catch (error) {
-    console.warn("참여 라운드 정보를 불러오지 못했습니다:", error);
-    participationVersionReady = true;
-
-    if (throwOnError) {
-      throw error;
-    }
-
-    return currentParticipationVersion;
+    serverClockReady = false;
+    if (throwOnError) throw error;
+    return serverTimeOffsetMs;
   } finally {
-    if (!keepOnline) {
-      goOffline(db);
-    }
+    goOffline(db);
   }
 }
 
-/* -------------------------------------------------------
-   LocalStorage / participation round
-------------------------------------------------------- */
-function getLocalParticipationVersion() {
-  const raw = Number(localStorage.getItem(PARTICIPATION_VERSION_KEY));
-  return Number.isFinite(raw) && raw >= 0 ? Math.floor(raw) : 0;
+function getEstimatedServerNow() {
+  return Date.now() + (serverClockReady ? serverTimeOffsetMs : 0);
 }
 
-function setLocalParticipationVersion(version) {
-  localStorage.setItem(
-    PARTICIPATION_VERSION_KEY,
-    String(Math.max(0, Math.floor(Number(version) || 0)))
-  );
+function getKstDateString(timestamp = getEstimatedServerNow()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(new Date(timestamp));
+
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
 }
 
-function hasLocalCompletionFlag() {
-  return localStorage.getItem(STORAGE_KEY) === "true";
+function getSavedParticipationDate() {
+  return localStorage.getItem(PARTICIPATION_DATE_KEY) || "";
 }
 
 function isCompletedBrowser() {
-  if (!hasLocalCompletionFlag()) return false;
-
-  // 기존 참여자의 저장 버전이 없으면 0으로 간주한다.
-  // 관리자가 라운드를 1 이상으로 올린 순간 기존 참여 제한이 풀린다.
-  return getLocalParticipationVersion() >= currentParticipationVersion;
+  return getSavedParticipationDate() === getKstDateString();
 }
 
 function getLastResponse() {
@@ -632,50 +619,26 @@ function getLastResponse() {
   }
 }
 
-function clearLocalCompletionForNewRound(version) {
-  localStorage.removeItem(STORAGE_KEY);
-  localStorage.removeItem(LAST_RESPONSE_KEY);
-  setLocalParticipationVersion(version);
-}
-
 function saveLocalCompletion(data) {
-  localStorage.setItem(STORAGE_KEY, "true");
+  localStorage.setItem(PARTICIPATION_DATE_KEY, getKstDateString());
   localStorage.setItem(LAST_RESPONSE_KEY, JSON.stringify(data));
-  setLocalParticipationVersion(currentParticipationVersion);
 }
 
-function refreshParticipationUiAfterReset() {
-  revisitNotice.hidden = true;
+function refreshDailyParticipationUi() {
+  const completedToday = isCompletedBrowser();
+  revisitNotice.hidden = !completedToday;
 
   if (!scene14Screen.hidden) {
-    scene14Intro.hidden = false;
-    completedState.hidden = true;
-    form.hidden = false;
-    formMessage.textContent = "";
-    submitButton.disabled = !db;
-    prepareScene14Ready();
+    if (completedToday) {
+      showCompletedPanel("오늘은 이미 질문을 남겼습니다.");
+    } else if (!scene14IntroRunning) {
+      completedState.hidden = true;
+      form.hidden = false;
+      formMessage.textContent = "";
+      submitButton.disabled = false;
+      prepareScene14Ready();
+    }
   }
-}
-
-function reconcileParticipationVersion(nextVersion) {
-  const normalized = Math.max(0, Math.floor(Number(nextVersion) || 0));
-  currentParticipationVersion = normalized;
-  participationVersionReady = true;
-
-  const localVersion = getLocalParticipationVersion();
-
-  if (hasLocalCompletionFlag() && localVersion < normalized) {
-    clearLocalCompletionForNewRound(normalized);
-    refreshParticipationUiAfterReset();
-    return;
-  }
-
-  // 미참여 브라우저도 현재 라운드를 기억해 이후 제출 시 같은 버전을 저장한다.
-  if (!hasLocalCompletionFlag() && localVersion < normalized) {
-    setLocalParticipationVersion(normalized);
-  }
-
-  revisitNotice.hidden = !isCompletedBrowser();
 }
 
 /* -------------------------------------------------------
@@ -748,7 +711,7 @@ function unlockScene14Viewport() {
 }
 
 function isScene14EditableElement(element) {
-  return element === questionInput || element === nicknameInput;
+  return element === questionInput;
 }
 
 function updateScene14KeyboardCompensation() {
@@ -945,13 +908,13 @@ function renderScene14() {
 
   if (isCompletedBrowser()) {
     scene14Intro.hidden = true;
-    showCompletedPanel("이미 참여가 완료된 브라우저입니다.");
+    showCompletedPanel("오늘은 이미 질문을 남겼습니다.");
   } else {
     scene14Intro.hidden = false;
     completedState.hidden = true;
     form.hidden = false;
     formMessage.textContent = "";
-    submitButton.disabled = !db;
+    submitButton.disabled = false;
     prepareScene14Ready();
   }
 }
@@ -969,7 +932,6 @@ function renderSubmissionSummary() {
   submissionSummary.innerHTML = "";
 
   [
-    ["이름", lastResponse?.nickname ?? "확인할 수 없음"],
     ["질문", lastResponse?.question ?? "확인할 수 없음"]
   ].forEach(([label, value]) => {
     const row = document.createElement("div");
@@ -2931,7 +2893,7 @@ function resetScene14Intro() {
   completedState.hidden = true;
   form.hidden = false;
   formMessage.textContent = "";
-  submitButton.disabled = !db;
+  submitButton.disabled = false;
 }
 
 function renderScene14Intro(time) {
@@ -3129,34 +3091,52 @@ document.addEventListener("visibilitychange", () => {
 });
 
 /* -------------------------------------------------------
-   입력 검증 / 저장
+   입력 검증 / Worker 제출
 ------------------------------------------------------- */
 function normalizeSingleLine(value) {
-  return value.replace(/[\r\n]+/g, " ").trim();
+  return value.replace(/[\r\n]+/g, " ").replace(/ {2,}/g, " ").trim();
+}
+
+function getCharacterCount(value) {
+  return Array.from(value).length;
 }
 
 function validateInputs() {
-  const nickname = normalizeSingleLine(nicknameInput.value);
   const question = normalizeSingleLine(questionInput.value);
+  const length = getCharacterCount(question);
 
-  if (nickname.length < 1 || nickname.length > 10) {
-    return { ok: false, message: "이름은 1~10자로 입력해주세요." };
+  if (length < 1 || length > 35) {
+    return { ok: false, message: "질문은 1~35자로 입력해주세요." };
   }
 
-  if (question.length < 1 || question.length > 20) {
-    return { ok: false, message: "질문은 1~20자로 입력해주세요." };
+  return { ok: true, question };
+}
+
+async function submitQuestionToWorker(question) {
+  const response = await fetch(`${MODERATION_WORKER_URL}/submit`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ question })
+  });
+
+  let payload = null;
+  try {
+    payload = await response.json();
+  } catch {
+    payload = null;
   }
 
-  return { ok: true, nickname, question };
+  if (!response.ok || !payload?.ok) {
+    throw new Error(payload?.message || `질문 제출 실패 (${response.status})`);
+  }
+
+  return payload;
 }
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
-
-  if (!db) {
-    formMessage.textContent = "Firebase 연결을 확인해주세요.";
-    return;
-  }
 
   const validation = validateInputs();
   if (!validation.ok) {
@@ -3164,66 +3144,38 @@ form.addEventListener("submit", async (event) => {
     return;
   }
 
-  nicknameInput.value = validation.nickname;
   questionInput.value = validation.question;
-
   submitButton.disabled = true;
-  formMessage.textContent = "참여 상태를 확인하는 중입니다…";
+  formMessage.textContent = "오늘 참여 여부를 확인하는 중입니다…";
 
   try {
-    // 애니메이션 재생 중에는 offline 상태를 유지하다가,
-    // 제출 직전에 최신 participationVersion을 한 번 더 확인한다.
-    // keepOnline=true로 같은 짧은 연결을 바로 아래 write까지 재사용한다.
-    await refreshParticipationVersionOnce({
-      keepOnline: true,
-      throwOnError: true
-    });
+    // 제출 직전 Firebase 서버 시간 오프셋을 다시 받아 KST 날짜를 확인한다.
+    // 서버 시간 확인에 실패해도 기기 KST로 폴백한다.
+    await refreshServerClockOnce();
 
     if (isCompletedBrowser()) {
-      showCompletedPanel("이미 참여가 완료된 브라우저입니다.");
+      showCompletedPanel("오늘은 이미 질문을 남겼습니다.");
       return;
     }
 
-    formMessage.textContent = "저장 중입니다…";
-
-    const responseId = push(ref(db, "responses")).key;
-    if (!responseId) throw new Error("responseId 생성 실패");
-
-    const timestamp = serverTimestamp();
-
-    await update(ref(db), {
-      [`responses/${responseId}`]: {
-        nickname: validation.nickname,
-        question: validation.question,
-        createdAt: timestamp,
-        winner: false
-      },
-      [`publicResponses/${responseId}`]: {
-        question: validation.question,
-        createdAt: timestamp,
-        winner: false
-      }
-    });
+    formMessage.textContent = "질문을 확인하고 있습니다…";
+    const result = await submitQuestionToWorker(validation.question);
 
     saveLocalCompletion({
-      responseId,
-      nickname: validation.nickname,
+      responseId: result.responseId || "",
       question: validation.question,
-      submittedAtLocal: Date.now()
+      moderationStatus: result.status || "pending",
+      submittedAtLocal: Date.now(),
+      kstDate: getKstDateString()
     });
 
     formMessage.textContent = "";
-    showCompletedPanel("제출이 완료되었습니다.");
+    showCompletedPanel("질문을 남겨주셔서 감사합니다.");
   } catch (error) {
-    console.error("응답 저장 실패:", error);
+    console.error("질문 제출 실패:", error);
     formMessage.textContent =
-      "연결 또는 저장에 실패했습니다. 입력 내용은 유지됩니다. 다시 제출해주세요.";
+      "연결 또는 제출에 실패했습니다. 입력 내용은 유지됩니다. 다시 시도해주세요.";
     submitButton.disabled = false;
-  } finally {
-    // 모바일 참가자는 제출이 끝난 뒤에도 실시간 연결을 유지하지 않는다.
-    if (db) {
-      goOffline(db);
-    }
   }
 });
 

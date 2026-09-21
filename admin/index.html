@@ -4,8 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="dark" />
-  <title>미지의 세계 — 관리자</title>
-  <link rel="stylesheet" href="./admin.css?v=admin-v1" />
+  <title>미지의 세계 — 질문 관리자</title>
+  <link rel="stylesheet" href="./admin.css?v=v26-permanent-operation" />
 </head>
 <body>
   <main id="adminApp" class="admin-app">
@@ -15,13 +15,7 @@
         <h1>관리자 로그인</h1>
         <p class="login-help">관리자 비밀번호를 입력하세요.</p>
         <label class="field-label" for="passwordInput">비밀번호</label>
-        <input
-          id="passwordInput"
-          class="text-input"
-          type="password"
-          autocomplete="current-password"
-          required
-        />
+        <input id="passwordInput" class="text-input" type="password" autocomplete="current-password" required />
         <button id="loginButton" class="primary-button" type="submit">로그인</button>
         <p id="loginMessage" class="form-message" aria-live="polite"></p>
       </form>
@@ -34,51 +28,38 @@
           <h1>질문 관리</h1>
         </div>
         <div class="header-actions">
-          <a class="ghost-link" href="../display/" target="_blank" rel="noopener">시각화 열기</a>
+          <button id="csvButton" class="secondary-button" type="button">현재 목록 CSV</button>
+          <a class="ghost-link" href="../display/" target="_blank" rel="noopener">대형 화면 열기</a>
           <button id="logoutButton" class="ghost-button" type="button">로그아웃</button>
         </div>
       </header>
 
       <section class="stats-grid" aria-label="응답 통계">
-        <article class="stat-card">
-          <span>전체 응답</span>
-          <strong id="totalCount">0</strong>
-        </article>
-        <article class="stat-card">
-          <span>실제 응답</span>
-          <strong id="realCount">0</strong>
-        </article>
-        <article class="stat-card">
-          <span>테스트</span>
-          <strong id="testCount">0</strong>
-        </article>
-        <article class="stat-card">
-          <span>당첨 이력</span>
-          <strong id="winnerCount">0</strong>
-        </article>
+        <article class="stat-card"><span>전체 질문</span><strong id="totalCount">0</strong></article>
+        <article class="stat-card"><span>승인</span><strong id="approvedCount">0</strong></article>
+        <article class="stat-card"><span>차단</span><strong id="blockedCount">0</strong></article>
+        <article class="stat-card"><span>보류</span><strong id="pendingCount">0</strong></article>
+        <article class="stat-card"><span>관리자 숨김</span><strong id="hiddenCount">0</strong></article>
       </section>
 
       <section class="admin-grid">
         <div class="responses-panel panel">
           <div class="panel-header">
             <div>
-              <h2>응답 목록</h2>
-              <p id="listSummary">0개 응답</p>
+              <h2>질문 목록</h2>
+              <p id="listSummary">0개 질문</p>
             </div>
             <div class="filter-controls">
-              <select id="filterSelect" class="select-input" aria-label="응답 필터">
-                <option value="all">전체</option>
-                <option value="real">실제 응답</option>
-                <option value="test">테스트 응답</option>
-                <option value="winner">당첨 이력</option>
+              <select id="statusFilter" class="select-input" aria-label="검열 상태 필터">
+                <option value="all">전체 상태</option>
+                <option value="approved">승인</option>
+                <option value="blocked">차단</option>
+                <option value="pending">보류</option>
+                <option value="hidden">관리자 숨김</option>
               </select>
-              <input
-                id="searchInput"
-                class="search-input"
-                type="search"
-                placeholder="이름·질문 검색"
-                autocomplete="off"
-              />
+              <label class="date-filter">시작 <input id="startDateFilter" class="date-input" type="date" /></label>
+              <label class="date-filter">종료 <input id="endDateFilter" class="date-input" type="date" /></label>
+              <input id="searchInput" class="search-input" type="search" placeholder="질문·사유 검색" autocomplete="off" />
             </div>
           </div>
 
@@ -86,17 +67,17 @@
             <table class="response-table">
               <thead>
                 <tr>
-                  <th>구분</th>
-                  <th>이름</th>
+                  <th>상태</th>
                   <th>질문</th>
                   <th>제출 시각</th>
-                  <th>당첨</th>
-                  <th></th>
+                  <th>화면</th>
+                  <th>판정 사유</th>
+                  <th>관리</th>
                 </tr>
               </thead>
               <tbody id="responseTbody"></tbody>
             </table>
-            <div id="emptyRows" class="empty-rows" hidden>표시할 응답이 없습니다.</div>
+            <div id="emptyRows" class="empty-rows" hidden>표시할 질문이 없습니다.</div>
           </div>
         </div>
 
@@ -104,76 +85,26 @@
           <section class="panel control-card">
             <div class="panel-header compact">
               <div>
-                <h2>테스트 데이터</h2>
-                <p>시각화 밀도와 배치를 빠르게 확인합니다.</p>
+                <h2>운영 기준</h2>
+                <p>모든 원본 질문은 responses에 보존됩니다.</p>
               </div>
             </div>
-            <div class="button-grid">
-              <button class="secondary-button test-generate" data-count="10" type="button">10개 생성</button>
-              <button class="secondary-button test-generate" data-count="50" type="button">50개 생성</button>
-              <button class="secondary-button test-generate" data-count="100" type="button">100개 생성</button>
-            </div>
-            <button id="deleteTestsButton" class="outline-danger-button full-button" type="button">
-              테스트 데이터만 삭제
-            </button>
-            <p id="testMessage" class="small-message" aria-live="polite"></p>
-          </section>
-
-
-          <section class="panel control-card">
-            <div class="panel-header compact">
-              <div>
-                <h2>참여 제한</h2>
-                <p>기존 응답은 그대로 두고 모든 브라우저의 재참여를 허용합니다.</p>
-              </div>
-            </div>
-            <p id="participationVersionText" class="small-message">현재 참여 라운드: 0</p>
-            <button id="resetParticipationButton" class="secondary-button full-button" type="button">
-              전체 참여 제한 초기화
-            </button>
-            <p id="participationMessage" class="small-message" aria-live="polite"></p>
-          </section>
-
-          <section class="panel control-card">
-            <div class="panel-header compact">
-              <div>
-                <h2>추첨</h2>
-                <p>대형 화면에는 질문만 표시됩니다.</p>
-              </div>
-            </div>
-
-            <label class="check-row">
-              <input id="includeTestsCheckbox" type="checkbox" />
-              <span>테스트 응답도 추첨 대상에 포함</span>
-            </label>
-
-            <button id="drawButton" class="draw-button full-button" type="button">질문 추첨</button>
-
-            <div id="currentWinnerCard" class="winner-card" hidden>
-              <span class="winner-label">현재 추첨 결과</span>
-              <strong id="currentWinnerQuestion"></strong>
-              <p id="currentWinnerNickname"></p>
-              <button id="clearWinnerButton" class="secondary-button full-button" type="button">
-                시각화 즉시 복귀
-              </button>
-            </div>
-
-            <button id="resetWinnersButton" class="ghost-button full-button" type="button">
-              당첨 이력 초기화
-            </button>
-            <p id="drawMessage" class="small-message" aria-live="polite"></p>
+            <ul class="operator-notes">
+              <li>승인 + 숨김 아님: 대형 화면 공개</li>
+              <li>차단/보류: 대형 화면 비공개</li>
+              <li>숨김: 원본은 유지하고 공개 목록에서 제거</li>
+              <li>영구삭제: 원본과 공개 데이터를 모두 삭제</li>
+            </ul>
           </section>
 
           <section class="panel control-card danger-card">
             <div class="panel-header compact">
               <div>
                 <h2>전체 데이터</h2>
-                <p>실제 응답까지 모두 삭제합니다.</p>
+                <p>원본 질문까지 모두 영구 삭제합니다.</p>
               </div>
             </div>
-            <button id="deleteAllButton" class="danger-button full-button" type="button">
-              전체 응답 삭제
-            </button>
+            <button id="deleteAllButton" class="danger-button full-button" type="button">전체 질문 영구삭제</button>
             <p id="dangerMessage" class="small-message" aria-live="polite"></p>
           </section>
         </aside>
@@ -186,6 +117,6 @@
     </section>
   </main>
 
-  <script type="module" src="./admin.js?v=admin-v4-name-label"></script>
+  <script type="module" src="./admin.js?v=v26-permanent-operation"></script>
 </body>
 </html>

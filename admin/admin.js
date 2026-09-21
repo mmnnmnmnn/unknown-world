@@ -9,9 +9,7 @@ import {
   getDatabase,
   ref,
   onValue,
-  update,
-  remove,
-  push
+  update
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js";
 
 import {
@@ -20,45 +18,6 @@ import {
 } from "../js/firebase-config.js";
 
 const ADMIN_EMAIL = "admin@unknown-world.app";
-const WINNER_DURATION_MS = 15000;
-
-const TEST_QUESTIONS = [
-  "우주는 어디까지일까?", "심해 끝에는 뭐가 있을까?", "외계인은 존재할까?",
-  "미래 사람은 어떻게 살까?", "내일 점심은 무엇일까?", "시간여행은 가능할까?",
-  "블랙홀 안에는 뭐가 있을까?", "꿈은 왜 꾸는 걸까?", "동물은 무슨 생각을 할까?",
-  "공룡의 색은 어땠을까?", "달에는 무엇이 있을까?", "화성에 생명체가 있을까?",
-  "백 년 뒤 지구는 어떨까?", "우주는 왜 어두울까?", "별은 몇 개나 있을까?",
-  "나는 미래에 뭘 할까?", "바다는 얼마나 깊을까?", "신은 존재할까?",
-  "우주 밖에는 무엇이 있을까?", "인류는 어디서 왔을까?",
-  "다른 우주도 있을까?", "로봇은 꿈을 꿀까?", "생명은 어떻게 시작됐을까?",
-  "끝없는 공간이 가능할까?", "미래 동물은 어떻게 생길까?", "AI는 어디까지 발전할까?",
-  "지구의 마지막은 언제일까?", "빛보다 빠를 수 있을까?", "죽으면 어디로 갈까?",
-  "다른 행성의 하늘은?", "심해 생물은 왜 빛날까?", "내년의 나는 달라질까?",
-  "우주는 계속 커질까?", "기억은 어디에 저장될까?", "고래는 서로 대화할까?",
-  "곤충은 무엇을 느낄까?", "식물도 기억을 할까?", "외계 문명은 우리를 알까?",
-  "태양은 언제까지 빛날까?", "지구 속에는 무엇이 있을까?",
-  "달의 뒷면은 왜 다를까?", "태초에는 무엇이 있었을까?", "미래에는 바다가 변할까?",
-  "인간은 다른 별에 살까?", "시간은 왜 한 방향일까?", "우리는 혼자인 걸까?",
-  "내일 비가 올까?", "십 년 뒤 직업은 뭘까?", "미래 도시의 모습은?",
-  "새는 길을 어떻게 찾을까?", "고양이는 나를 기억할까?", "꿈을 조절할 수 있을까?",
-  "뇌는 왜 잠을 자야 할까?", "우주에는 소리가 있을까?", "별에도 계절이 있을까?",
-  "다른 행성에도 바다가?", "지구 중심은 어떤 모습일까?", "공룡은 어떤 소리를 냈을까?",
-  "미래 음식은 어떤 맛일까?", "인간은 얼마나 오래 살까?",
-  "사라진 생물은 돌아올까?", "기후는 어디까지 변할까?", "우주선은 얼마나 빨라질까?",
-  "심해에는 거인이 있을까?", "눈에 안 보이는 생명은?", "평행세계는 존재할까?",
-  "우주의 끝을 볼 수 있을까?", "내 생각은 어디서 생길까?", "기억을 옮길 수 있을까?",
-  "미래에는 학교가 있을까?", "로봇과 친구가 될 수 있을까?", "별은 왜 반짝일까?",
-  "행성은 어떻게 태어날까?", "외계 생명은 어떤 색일까?", "인간은 화성에서 살까?",
-  "심해는 왜 어두울까?", "우주에서 냄새가 날까?", "미래의 나는 어디에 있을까?",
-  "곤충은 꿈을 꿀까?", "고래는 얼마나 멀리 갈까?",
-  "지구는 왜 둥글까?", "달은 왜 따라오는 것 같을까?", "시간을 멈출 수 있을까?",
-  "과거를 볼 수 있을까?", "미래를 예측할 수 있을까?", "우주는 왜 생겼을까?",
-  "생명체의 끝은 어디일까?", "다른 지구가 있을까?", "인류는 언제까지 살까?",
-  "태양보다 큰 별은 얼마나?", "우주에는 중심이 있을까?", "별이 사라지면 어떻게 될까?",
-  "미래에는 날아다닐까?", "내일의 뉴스는 무엇일까?", "백 년 뒤 서울은 어떨까?",
-  "바닷속 도시는 가능할까?", "우주 엘리베이터가 생길까?", "미래의 동물은 말을 할까?",
-  "신기한 생명은 더 있을까?", "나는 무엇이 될까?"
-];
 
 const loginView = document.querySelector("#loginView");
 const dashboardView = document.querySelector("#dashboardView");
@@ -69,31 +28,18 @@ const loginMessage = document.querySelector("#loginMessage");
 const logoutButton = document.querySelector("#logoutButton");
 
 const totalCount = document.querySelector("#totalCount");
-const realCount = document.querySelector("#realCount");
-const testCount = document.querySelector("#testCount");
-const winnerCount = document.querySelector("#winnerCount");
+const approvedCount = document.querySelector("#approvedCount");
+const blockedCount = document.querySelector("#blockedCount");
+const pendingCount = document.querySelector("#pendingCount");
+const hiddenCount = document.querySelector("#hiddenCount");
 const listSummary = document.querySelector("#listSummary");
 const responseTbody = document.querySelector("#responseTbody");
 const emptyRows = document.querySelector("#emptyRows");
-const filterSelect = document.querySelector("#filterSelect");
+const statusFilter = document.querySelector("#statusFilter");
+const startDateFilter = document.querySelector("#startDateFilter");
+const endDateFilter = document.querySelector("#endDateFilter");
 const searchInput = document.querySelector("#searchInput");
-
-const testButtons = [...document.querySelectorAll(".test-generate")];
-const deleteTestsButton = document.querySelector("#deleteTestsButton");
-const testMessage = document.querySelector("#testMessage");
-
-const resetParticipationButton = document.querySelector("#resetParticipationButton");
-const participationVersionText = document.querySelector("#participationVersionText");
-const participationMessage = document.querySelector("#participationMessage");
-
-const includeTestsCheckbox = document.querySelector("#includeTestsCheckbox");
-const drawButton = document.querySelector("#drawButton");
-const currentWinnerCard = document.querySelector("#currentWinnerCard");
-const currentWinnerQuestion = document.querySelector("#currentWinnerQuestion");
-const currentWinnerNickname = document.querySelector("#currentWinnerNickname");
-const clearWinnerButton = document.querySelector("#clearWinnerButton");
-const resetWinnersButton = document.querySelector("#resetWinnersButton");
-const drawMessage = document.querySelector("#drawMessage");
+const csvButton = document.querySelector("#csvButton");
 
 const deleteAllButton = document.querySelector("#deleteAllButton");
 const dangerMessage = document.querySelector("#dangerMessage");
@@ -103,12 +49,8 @@ const authIdentity = document.querySelector("#authIdentity");
 let auth;
 let db;
 let responses = [];
-let currentWinnerState = null;
-let currentParticipationVersion = 0;
 let unsubscribeResponses = null;
 let unsubscribeConnection = null;
-let unsubscribeWinner = null;
-let unsubscribeParticipation = null;
 
 function setBusy(elements, busy) {
   for (const element of elements) {
@@ -116,20 +58,42 @@ function setBusy(elements, busy) {
   }
 }
 
+function getKstDateString(timestamp) {
+  if (!Number.isFinite(timestamp) || timestamp <= 0) return "";
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(new Date(timestamp));
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
 function normalizeResponse(id, raw = {}) {
+  const question = String(raw.question ?? "").trim();
+  const createdAt = Number(raw.createdAt ?? 0);
+  const moderationStatus = String(raw.moderationStatus || (question ? "approved" : "pending"));
+
   return {
     id,
-    nickname: String(raw.nickname ?? "").trim(),
-    question: String(raw.question ?? "").trim(),
-    createdAt: Number(raw.createdAt ?? 0),
-    winner: Boolean(raw.winner),
-    isTest: Boolean(raw.isTest)
+    question,
+    createdAt,
+    kstDate: String(raw.kstDate || getKstDateString(createdAt)),
+    moderationStatus,
+    moderationReasonCode: String(raw.moderationReasonCode ?? ""),
+    moderationReason: String(raw.moderationReason ?? ""),
+    moderationSource: String(raw.moderationSource ?? ""),
+    moderatedAt: Number(raw.moderatedAt ?? 0),
+    hidden: Boolean(raw.hidden)
   };
 }
 
 function formatTime(timestamp) {
   if (!Number.isFinite(timestamp) || timestamp <= 0) return "-";
   return new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
@@ -148,58 +112,83 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
+function getStatusLabel(item) {
+  if (item.hidden) return "숨김";
+  if (item.moderationStatus === "approved") return "승인";
+  if (item.moderationStatus === "blocked") return "차단";
+  if (item.moderationStatus === "pending") return "보류";
+  return item.moderationStatus || "기타";
+}
+
 function getFilteredResponses() {
-  const filter = filterSelect.value;
+  const filter = statusFilter.value;
+  const startDate = startDateFilter.value;
+  const endDate = endDateFilter.value;
   const term = searchInput.value.trim().toLowerCase();
 
   return responses
     .filter((item) => {
-      if (filter === "real" && item.isTest) return false;
-      if (filter === "test" && !item.isTest) return false;
-      if (filter === "winner" && !item.winner) return false;
+      if (filter === "hidden") {
+        if (!item.hidden) return false;
+      } else if (filter !== "all") {
+        if (item.moderationStatus !== filter || item.hidden) return false;
+      }
+
+      if (startDate && item.kstDate && item.kstDate < startDate) return false;
+      if (endDate && item.kstDate && item.kstDate > endDate) return false;
 
       if (term) {
-        const haystack = `${item.nickname} ${item.question}`.toLowerCase();
+        const haystack = [
+          item.question,
+          item.moderationReasonCode,
+          item.moderationReason,
+          item.moderationSource
+        ].join(" ").toLowerCase();
         if (!haystack.includes(term)) return false;
       }
+
       return true;
     })
-    .sort((a, b) => b.createdAt - a.createdAt);
+    .sort((a, b) => b.createdAt - a.createdAt || b.id.localeCompare(a.id));
 }
 
 function renderStats() {
   totalCount.textContent = String(responses.length);
-  testCount.textContent = String(responses.filter((item) => item.isTest).length);
-  realCount.textContent = String(responses.filter((item) => !item.isTest).length);
-  winnerCount.textContent = String(responses.filter((item) => item.winner).length);
+  approvedCount.textContent = String(responses.filter((item) => item.moderationStatus === "approved").length);
+  blockedCount.textContent = String(responses.filter((item) => item.moderationStatus === "blocked").length);
+  pendingCount.textContent = String(responses.filter((item) => item.moderationStatus === "pending").length);
+  hiddenCount.textContent = String(responses.filter((item) => item.hidden).length);
 }
 
 function renderRows() {
   const filtered = getFilteredResponses();
-  listSummary.textContent = `${filtered.length}개 응답`;
+  listSummary.textContent = `${filtered.length}개 질문`;
   emptyRows.hidden = filtered.length > 0;
 
-  responseTbody.innerHTML = filtered.map((item) => `
-    <tr>
-      <td>
-        <span class="badge ${item.isTest ? "test" : ""}">
-          ${item.isTest ? "TEST" : "실제"}
-        </span>
-      </td>
-      <td>${escapeHtml(item.nickname || "-")}</td>
-      <td class="question-cell">${escapeHtml(item.question)}</td>
-      <td class="time-cell">${escapeHtml(formatTime(item.createdAt))}</td>
-      <td>${item.winner ? '<span class="badge winner">당첨</span>' : "-"}</td>
-      <td>
-        <button
-          class="row-delete-button"
-          type="button"
-          data-delete-id="${escapeHtml(item.id)}"
-          aria-label="${escapeHtml(item.nickname || item.question)} 응답 삭제"
-        >삭제</button>
-      </td>
-    </tr>
-  `).join("");
+  responseTbody.innerHTML = filtered.map((item) => {
+    const status = getStatusLabel(item);
+    const publicState = item.moderationStatus === "approved" && !item.hidden ? "공개" : "비공개";
+    const reason = item.moderationReason || item.moderationReasonCode || "-";
+    const hideButton = item.moderationStatus === "approved" && !item.hidden
+      ? `<button class="row-hide-button" type="button" data-hide-id="${escapeHtml(item.id)}">숨김</button>`
+      : "";
+
+    return `
+      <tr>
+        <td><span class="badge status-${escapeHtml(item.hidden ? "hidden" : item.moderationStatus)}">${escapeHtml(status)}</span></td>
+        <td class="question-cell">${escapeHtml(item.question || "-")}</td>
+        <td class="time-cell">${escapeHtml(formatTime(item.createdAt))}</td>
+        <td><span class="public-state ${publicState === "공개" ? "is-public" : ""}">${publicState}</span></td>
+        <td class="reason-cell" title="${escapeHtml(item.moderationReasonCode)}">${escapeHtml(reason)}</td>
+        <td>
+          <div class="row-actions">
+            ${hideButton}
+            <button class="row-delete-button" type="button" data-delete-id="${escapeHtml(item.id)}">영구삭제</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join("");
 }
 
 function renderAll() {
@@ -207,67 +196,28 @@ function renderAll() {
   renderRows();
 }
 
-function renderCurrentWinner() {
-  const active = currentWinnerState?.active === true;
-  if (!active) {
-    currentWinnerCard.hidden = true;
-    return;
-  }
-
-  const expiresAt = Number(currentWinnerState.expiresAt ?? 0);
-  if (expiresAt && Date.now() >= expiresAt) {
-    currentWinnerCard.hidden = true;
-    return;
-  }
-
-  currentWinnerQuestion.textContent = String(currentWinnerState.question ?? "");
-  currentWinnerNickname.textContent = currentWinnerState.nickname
-    ? `이름: ${currentWinnerState.nickname}`
-    : "이름 정보 없음";
-  currentWinnerCard.hidden = false;
-}
-
 function attachRealtimeListeners() {
   if (unsubscribeResponses) unsubscribeResponses();
   if (unsubscribeConnection) unsubscribeConnection();
-  if (unsubscribeWinner) unsubscribeWinner();
-  if (unsubscribeParticipation) unsubscribeParticipation();
 
-  unsubscribeResponses = onValue(ref(db, "responses"), (snapshot) => {
-    const raw = snapshot.val() ?? {};
-    responses = Object.entries(raw).map(([id, value]) => normalizeResponse(id, value));
-    renderAll();
-  }, (error) => {
-    console.error(error);
-    connectionText.textContent = "응답 목록 권한 오류";
-  });
+  unsubscribeResponses = onValue(
+    ref(db, "responses"),
+    (snapshot) => {
+      const raw = snapshot.val() ?? {};
+      responses = Object.entries(raw).map(([id, value]) => normalizeResponse(id, value));
+      renderAll();
+    },
+    (error) => {
+      console.error(error);
+      connectionText.textContent = "응답 목록 권한 오류";
+    }
+  );
 
   unsubscribeConnection = onValue(ref(db, ".info/connected"), (snapshot) => {
     connectionText.textContent = snapshot.val() === true
       ? "Firebase 실시간 연결"
       : "Firebase 연결 끊김";
   });
-
-  unsubscribeWinner = onValue(ref(db, "displayState/currentWinner"), (snapshot) => {
-    currentWinnerState = snapshot.val();
-    renderCurrentWinner();
-  });
-
-  unsubscribeParticipation = onValue(
-    ref(db, "participationState/version"),
-    (snapshot) => {
-      currentParticipationVersion = Math.max(
-        0,
-        Math.floor(Number(snapshot.val()) || 0)
-      );
-      participationVersionText.textContent =
-        `현재 참여 라운드: ${currentParticipationVersion}`;
-    },
-    (error) => {
-      console.error(error);
-      participationVersionText.textContent = "참여 라운드 확인 실패";
-    }
-  );
 }
 
 async function login(password) {
@@ -275,191 +225,100 @@ async function login(password) {
   return signInWithEmailAndPassword(auth, ADMIN_EMAIL, password);
 }
 
+async function hideResponseById(id) {
+  const item = responses.find((response) => response.id === id);
+  if (!item || item.hidden) return;
+
+  const ok = window.confirm(
+    `다음 질문을 대형 화면에서 숨길까요?\n\n${item.question}\n\n원본 질문은 관리자 데이터에 남습니다.`
+  );
+  if (!ok) return;
+
+  await update(ref(db), {
+    [`responses/${id}/hidden`]: true,
+    [`publicResponses/${id}`]: null
+  });
+}
+
 async function deleteResponseById(id) {
   const item = responses.find((response) => response.id === id);
   if (!item) return;
 
-  const ok = window.confirm(`다음 응답을 삭제할까요?\n\n${item.question}`);
+  const ok = window.confirm(
+    `다음 질문을 영구 삭제할까요?\n\n${item.question}\n\nresponses와 publicResponses에서 모두 삭제되며 복원할 수 없습니다.`
+  );
   if (!ok) return;
 
-  const updates = {
+  await update(ref(db), {
     [`responses/${id}`]: null,
     [`publicResponses/${id}`]: null
-  };
-
-  if (currentWinnerState?.responseId === id) {
-    updates["displayState/currentWinner"] = null;
-  }
-
-  await update(ref(db), updates);
-}
-
-function testQuestionAt(index) {
-  return TEST_QUESTIONS[index % TEST_QUESTIONS.length];
-}
-
-async function generateTestResponses(count) {
-  const safeCount = Math.max(1, Math.min(100, Number(count) || 0));
-  const updates = {};
-  const baseTime = Date.now();
-  const offset = Math.floor(Math.random() * TEST_QUESTIONS.length);
-
-  for (let i = 0; i < safeCount; i += 1) {
-    const id = push(ref(db, "responses")).key;
-    if (!id) continue;
-
-    const question = testQuestionAt(i + offset).slice(0, 20);
-    const nickname = `TEST-${String((i + 1) % 1000).padStart(3, "0")}`.slice(0, 10);
-    const createdAt = baseTime + i;
-
-    updates[`responses/${id}`] = {
-      nickname,
-      question,
-      createdAt,
-      winner: false,
-      isTest: true
-    };
-
-    updates[`publicResponses/${id}`] = {
-      question,
-      createdAt,
-      winner: false,
-      isTest: true
-    };
-  }
-
-  await update(ref(db), updates);
-}
-
-async function deleteTestResponses() {
-  const testItems = responses.filter((item) => item.isTest);
-  if (testItems.length === 0) {
-    testMessage.textContent = "삭제할 테스트 데이터가 없습니다.";
-    return;
-  }
-
-  const ok = window.confirm(`테스트 응답 ${testItems.length}개를 모두 삭제할까요?`);
-  if (!ok) return;
-
-  const updates = {};
-  for (const item of testItems) {
-    updates[`responses/${item.id}`] = null;
-    updates[`publicResponses/${item.id}`] = null;
-  }
-
-  if (testItems.some((item) => item.id === currentWinnerState?.responseId)) {
-    updates["displayState/currentWinner"] = null;
-  }
-
-  await update(ref(db), updates);
-}
-
-function secureRandomIndex(length) {
-  if (length <= 0) return -1;
-
-  if (!window.crypto?.getRandomValues) {
-    return Math.floor(Math.random() * length);
-  }
-
-  const max = 0x100000000;
-  const limit = max - (max % length);
-  const buffer = new Uint32Array(1);
-
-  do {
-    window.crypto.getRandomValues(buffer);
-  } while (buffer[0] >= limit);
-
-  return buffer[0] % length;
-}
-
-async function resetParticipationLimit() {
-  const ok = window.confirm(
-    "모든 참여 브라우저가 다시 질문을 제출할 수 있게 됩니다.\n\n기존 응답 데이터는 삭제되지 않습니다.\n계속할까요?"
-  );
-
-  if (!ok) return;
-
-  const nextVersion = currentParticipationVersion + 1;
-
-  await update(ref(db), {
-    "participationState/version": nextVersion,
-    "participationState/resetAt": Date.now()
   });
-
-  participationMessage.textContent =
-    `참여 제한을 초기화했습니다. 새 참여 라운드: ${nextVersion}`;
 }
 
-async function drawWinner() {
-  const includeTests = includeTestsCheckbox.checked;
+function sanitizeCsvCell(value) {
+  let text = String(value ?? "").replace(/\r?\n/g, " ");
+  if (/^[=+\-@]/.test(text)) text = `'${text}`;
+  return `"${text.replaceAll('"', '""')}"`;
+}
 
-  const eligible = responses.filter((item) =>
-    !item.winner && (includeTests || !item.isTest)
-  );
-
-  if (eligible.length === 0) {
-    drawMessage.textContent = includeTests
-      ? "추첨 가능한 미당첨 응답이 없습니다."
-      : "추첨 가능한 실제 응답이 없습니다.";
+function downloadCsv() {
+  const items = getFilteredResponses();
+  if (items.length === 0) {
+    window.alert("CSV로 저장할 질문이 없습니다.");
     return;
   }
 
-  const index = secureRandomIndex(eligible.length);
-  const selected = eligible[index];
-  const now = Date.now();
+  const rows = [
+    ["ID", "질문", "제출시각(KST)", "KST날짜", "검열상태", "관리자숨김", "사유코드", "사유", "검열출처"]
+  ];
 
-  await update(ref(db), {
-    [`responses/${selected.id}/winner`]: true,
-    [`publicResponses/${selected.id}/winner`]: true,
-    "displayState/currentWinner": {
-      active: true,
-      responseId: selected.id,
-      question: selected.question,
-      nickname: selected.nickname,
-      shownAt: now,
-      expiresAt: now + WINNER_DURATION_MS
-    }
-  });
-
-  drawMessage.textContent = "추첨 결과를 시각화 화면에 표시했습니다.";
-}
-
-async function clearWinnerDisplay() {
-  await remove(ref(db, "displayState/currentWinner"));
-  drawMessage.textContent = "시각화 화면을 일반 질문 화면으로 복귀시켰습니다.";
-}
-
-async function resetWinnerHistory() {
-  const winners = responses.filter((item) => item.winner);
-  if (winners.length === 0) {
-    drawMessage.textContent = "초기화할 당첨 이력이 없습니다.";
-    return;
+  for (const item of items) {
+    rows.push([
+      item.id,
+      item.question,
+      formatTime(item.createdAt),
+      item.kstDate,
+      item.moderationStatus,
+      item.hidden ? "TRUE" : "FALSE",
+      item.moderationReasonCode,
+      item.moderationReason,
+      item.moderationSource
+    ]);
   }
 
-  const ok = window.confirm(`당첨 이력 ${winners.length}건을 모두 초기화할까요?`);
-  if (!ok) return;
+  const csv = "\uFEFF" + rows.map((row) => row.map(sanitizeCsvCell).join(",")).join("\r\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const date = getKstDateString(Date.now());
 
-  const updates = {
-    "displayState/currentWinner": null
-  };
+  link.href = url;
+  link.download = `unknown-world-questions-${date}.csv`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
-  for (const item of winners) {
-    updates[`responses/${item.id}/winner`] = false;
-    updates[`publicResponses/${item.id}/winner`] = false;
+function chunk(items, size) {
+  const chunks = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
   }
-
-  await update(ref(db), updates);
-  drawMessage.textContent = "당첨 이력을 초기화했습니다.";
+  return chunks;
 }
 
 async function deleteAllResponses() {
-  if (responses.length === 0) {
-    dangerMessage.textContent = "삭제할 응답이 없습니다.";
+  const items = [...responses];
+  const total = items.length;
+
+  if (total === 0) {
+    dangerMessage.textContent = "삭제할 질문이 없습니다.";
     return;
   }
 
   const typed = window.prompt(
-    `실제 응답을 포함한 ${responses.length}개 데이터를 전부 삭제합니다.\n계속하려면 '전체삭제'를 입력하세요.`
+    `원본을 포함한 ${total}개 질문을 모두 영구 삭제합니다.\n계속하려면 '전체삭제'를 입력하세요.`
   );
 
   if (typed !== "전체삭제") {
@@ -467,18 +326,19 @@ async function deleteAllResponses() {
     return;
   }
 
-  const updates = {
-    "displayState/currentWinner": null
-  };
-
-  for (const item of responses) {
-    updates[`responses/${item.id}`] = null;
-    updates[`publicResponses/${item.id}`] = null;
+  let deleted = 0;
+  for (const group of chunk(items, 200)) {
+    const updates = {};
+    for (const item of group) {
+      updates[`responses/${item.id}`] = null;
+      updates[`publicResponses/${item.id}`] = null;
+    }
+    await update(ref(db), updates);
+    deleted += group.length;
+    dangerMessage.textContent = `${deleted}/${total}개 삭제 중…`;
   }
 
-  await update(ref(db), updates);
-
-  dangerMessage.textContent = `전체 응답 ${responses.length}개를 삭제했습니다.`;
+  dangerMessage.textContent = `전체 질문 ${deleted}개를 삭제했습니다.`;
 }
 
 loginForm.addEventListener("submit", async (event) => {
@@ -509,110 +369,33 @@ loginForm.addEventListener("submit", async (event) => {
 });
 
 logoutButton.addEventListener("click", () => signOut(auth));
-
-filterSelect.addEventListener("change", renderRows);
+statusFilter.addEventListener("change", renderRows);
+startDateFilter.addEventListener("change", renderRows);
+endDateFilter.addEventListener("change", renderRows);
 searchInput.addEventListener("input", renderRows);
+csvButton.addEventListener("click", downloadCsv);
 
 responseTbody.addEventListener("click", async (event) => {
-  const button = event.target.closest("[data-delete-id]");
+  const hideButton = event.target.closest("[data-hide-id]");
+  const deleteButton = event.target.closest("[data-delete-id]");
+  const button = hideButton || deleteButton;
   if (!button) return;
 
   button.disabled = true;
   try {
-    await deleteResponseById(button.dataset.deleteId);
+    if (hideButton) await hideResponseById(hideButton.dataset.hideId);
+    if (deleteButton) await deleteResponseById(deleteButton.dataset.deleteId);
   } catch (error) {
     console.error(error);
-    window.alert("삭제에 실패했습니다.");
+    window.alert("처리에 실패했습니다.");
   } finally {
     button.disabled = false;
   }
 });
 
-for (const button of testButtons) {
-  button.addEventListener("click", async () => {
-    const count = Number(button.dataset.count);
-    setBusy(testButtons, true);
-    deleteTestsButton.disabled = true;
-    testMessage.textContent = `테스트 질문 ${count}개 생성 중…`;
-
-    try {
-      await generateTestResponses(count);
-      testMessage.textContent = `테스트 질문 ${count}개를 생성했습니다.`;
-    } catch (error) {
-      console.error(error);
-      testMessage.textContent = "테스트 질문 생성에 실패했습니다.";
-    } finally {
-      setBusy(testButtons, false);
-      deleteTestsButton.disabled = false;
-    }
-  });
-}
-
-deleteTestsButton.addEventListener("click", async () => {
-  setBusy([deleteTestsButton], true);
-  try {
-    await deleteTestResponses();
-  } catch (error) {
-    console.error(error);
-    testMessage.textContent = "테스트 데이터 삭제에 실패했습니다.";
-  } finally {
-    setBusy([deleteTestsButton], false);
-  }
-});
-
-resetParticipationButton.addEventListener("click", async () => {
-  setBusy([resetParticipationButton], true);
-  participationMessage.textContent = "참여 제한 초기화 중…";
-
-  try {
-    await resetParticipationLimit();
-  } catch (error) {
-    console.error(error);
-    participationMessage.textContent = "참여 제한 초기화에 실패했습니다.";
-  } finally {
-    setBusy([resetParticipationButton], false);
-  }
-});
-
-drawButton.addEventListener("click", async () => {
-  setBusy([drawButton], true);
-  drawMessage.textContent = "추첨 중…";
-  try {
-    await drawWinner();
-  } catch (error) {
-    console.error(error);
-    drawMessage.textContent = "추첨 처리에 실패했습니다.";
-  } finally {
-    setBusy([drawButton], false);
-  }
-});
-
-clearWinnerButton.addEventListener("click", async () => {
-  setBusy([clearWinnerButton], true);
-  try {
-    await clearWinnerDisplay();
-  } catch (error) {
-    console.error(error);
-    drawMessage.textContent = "시각화 복귀 처리에 실패했습니다.";
-  } finally {
-    setBusy([clearWinnerButton], false);
-  }
-});
-
-resetWinnersButton.addEventListener("click", async () => {
-  setBusy([resetWinnersButton], true);
-  try {
-    await resetWinnerHistory();
-  } catch (error) {
-    console.error(error);
-    drawMessage.textContent = "당첨 이력 초기화에 실패했습니다.";
-  } finally {
-    setBusy([resetWinnersButton], false);
-  }
-});
-
 deleteAllButton.addEventListener("click", async () => {
   setBusy([deleteAllButton], true);
+  dangerMessage.textContent = "";
   try {
     await deleteAllResponses();
   } catch (error) {
@@ -643,26 +426,21 @@ function initialize() {
     if (isAdmin) {
       authIdentity.textContent = user.email;
       attachRealtimeListeners();
-    } else {
-      authIdentity.textContent = "";
-      responses = [];
-      currentWinnerState = null;
-      renderAll();
+      return;
+    }
 
-      if (unsubscribeResponses) unsubscribeResponses();
-      if (unsubscribeConnection) unsubscribeConnection();
-      if (unsubscribeWinner) unsubscribeWinner();
-      if (unsubscribeParticipation) unsubscribeParticipation();
+    authIdentity.textContent = "";
+    responses = [];
+    renderAll();
 
-      unsubscribeResponses = null;
-      unsubscribeConnection = null;
-      unsubscribeWinner = null;
-      unsubscribeParticipation = null;
+    if (unsubscribeResponses) unsubscribeResponses();
+    if (unsubscribeConnection) unsubscribeConnection();
+    unsubscribeResponses = null;
+    unsubscribeConnection = null;
 
-      if (user) {
-        signOut(auth);
-        loginMessage.textContent = "관리자 계정이 아닙니다.";
-      }
+    if (user) {
+      signOut(auth);
+      loginMessage.textContent = "관리자 계정이 아닙니다.";
     }
   });
 }

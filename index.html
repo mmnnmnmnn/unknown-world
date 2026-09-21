@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="color-scheme" content="dark" />
   <title>데이터 너머, 미지의 세계</title>
-  <link rel="stylesheet" href="./css/common.css?v=mobile-v25-hide-debug-badges" />
+  <link rel="stylesheet" href="./css/common.css?v=v26-permanent-operation" />
 </head>
 <body class="mobile-page">
   <main id="mobileApp" class="mobile-app">
@@ -22,8 +22,8 @@
         <p id="loadStatus" class="load-status" aria-live="polite">장면을 준비하고 있습니다…</p>
 
         <div id="revisitNotice" class="revisit-notice" hidden>
-          이미 참여를 완료한 브라우저입니다.<br />
-          애니메이션은 다시 볼 수 있지만 질문은 다시 제출할 수 없습니다.
+          오늘 이미 질문을 남긴 브라우저입니다.<br />
+          애니메이션은 다시 볼 수 있으며 다음 날 다시 참여할 수 있습니다.
         </div>
       </div>
     </section>
@@ -279,24 +279,20 @@
         </div>
 
         <div id="scene14Warning" class="warning form-warning" hidden>
-          Firebase 설정이 완료되지 않아 제출 기능을 사용할 수 없습니다.
+          서버 연결을 확인해주세요.
         </div>
 
         <form id="responseForm" class="response-form" novalidate>
           <div id="questionStage" class="question-stage">
             <label class="sr-only" for="question">질문</label>
             <div class="question-bracket">
-              <input id="question" name="question" type="text" minlength="1" maxlength="20" autocomplete="off" required aria-label="질문" />
+              <input id="question" name="question" type="text" minlength="1" maxlength="35" autocomplete="off" required aria-label="질문" />
             </div>
-          </div>
-
-          <div class="nickname-stage">
-            <label for="nickname">이름</label>
-            <input id="nickname" name="nickname" type="text" minlength="1" maxlength="10" autocomplete="off" required placeholder="이름 1~10자" />
           </div>
 
           <button id="submitButton" class="submit-button" type="submit">질문 보내기</button>
           <p id="formMessage" class="form-message" role="status" aria-live="polite"></p>
+          <p class="moderation-notice">부적절한 내용이 포함된 질문은 표시되지 않을 수 있습니다.</p>
         </form>
 
         <section id="completedState" class="completed-panel" hidden>
@@ -307,7 +303,7 @@
           </div>
 
           <h2 id="completedTitle">제출이 완료되었습니다.</h2>
-          <p class="completed-copy">질문이 하나의 별이 되어 대형 화면에 추가됩니다.</p>
+          <p class="completed-copy">질문을 남겨주셔서 감사합니다.<br />검열을 통과한 질문은 대형 화면에 표시됩니다.</p>
 
           <dl id="submissionSummary" class="submission-summary"></dl>
 
@@ -319,6 +315,6 @@
 
   </main>
 
-  <script type="module" src="./js/mobile.js?v=mobile-v24-skip-firebase-lite"></script>
+  <script type="module" src="./js/mobile.js?v=v26-permanent-operation"></script>
 </body>
 </html>
